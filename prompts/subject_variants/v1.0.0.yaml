@@ -1,0 +1,51 @@
+name: subject_variants
+version: "1.0.0"
+description: >
+  Three subject-line alternatives from distinct angles (FR-3.10). Subject lines
+  are the highest-leverage field and the one humans most often rewrite.
+created: 2026-08-07
+model_tested: openai/gpt-oss-120b
+
+defaults:
+  # Diversity is the entire point of this prompt.
+  temperature: 0.9
+  top_p: 0.95
+  # gpt-oss models emit internal reasoning tokens that count toward max_tokens but
+  # never appear in the response. Budgets sized to the visible output get cut off
+  # mid-JSON, which Groq reports as `json_validate_failed` rather than a length
+  # finish. 2048 is the practical floor for any structured output here.
+  max_tokens: 2048
+
+required_context:
+  - draft
+
+output_schema: subject_variants
+
+system: |
+  {% include "_shared/system_persona.md" %}
+
+user: |
+  Here is a newsletter:
+
+  Title: {{ draft.title }}
+  Summary: {{ draft.summary }}
+
+  Body:
+  {{ draft.newsletter }}
+
+  ---
+
+  Write exactly three subject lines, each from a DIFFERENT angle:
+
+  1. Benefit-led — the concrete outcome for the reader.
+  2. Curiosity-led — a specific open question, not vague teasing.
+  3. Factual — the plainest accurate statement of what happened.
+
+  Asking for "three subject lines" without these angles reliably produces three
+  paraphrases of the same sentence. Make them genuinely different approaches.
+
+  {% include "_shared/length_rules.md" %}
+
+  - Each subject line: MAXIMUM 60 characters.
+  - No clickbait, no ALL CAPS, no leading emoji.
+  - Do not begin any of them with "Newsletter" or "Update".

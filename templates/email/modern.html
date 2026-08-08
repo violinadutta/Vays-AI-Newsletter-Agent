@@ -1,0 +1,130 @@
+{# Modern — clean, generous whitespace, coloured header band.
+
+   Hand-authored table layout (D-23). Rules this file follows, all of which exist
+   because Outlook renders with the Word engine and Gmail strips <style> blocks:
+
+   - Tables for layout, never divs. `role="presentation"` so screen readers skip them.
+   - Fixed 600px content width; every table has an explicit width.
+   - Styles live in <style> and are inlined at render time by premailer.
+   - No flexbox, grid, float, background-image or shorthand `background`.
+   - The CTA is a padded table cell, not a <button> or an <a> with padding.
+   - MSO conditional comments give Outlook a fixed-width wrapper.
+#}<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <title>{{ content.title }}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td, a { font-family: Arial, Helvetica, sans-serif !important; }
+  </style>
+  <![endif]-->
+  <style type="text/css">
+    body { margin:0; padding:0; width:100% !important; background-color:#F7F8FA;
+           -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table { border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic; }
+    .wrapper { width:100%; background-color:#F7F8FA; }
+    .container { width:600px; max-width:600px; background-color:#FFFFFF; }
+    .band { background-color:{{ brand.primary_color }}; padding:28px 32px; }
+    .brandname { font-family:Arial,Helvetica,sans-serif; font-size:18px; font-weight:bold;
+                 color:{{ brand.text_on_primary }}; letter-spacing:0.2px; }
+    .body-cell { padding:32px; font-family:Arial,Helvetica,sans-serif; color:#14181F; }
+    h1 { margin:0 0 18px 0; font-size:26px; line-height:32px; font-weight:bold; color:#14181F; }
+    p  { margin:0 0 16px 0; font-size:16px; line-height:26px; color:#14181F; }
+    .lede { font-size:17px; line-height:27px; color:#5A6472; margin:0 0 22px 0; }
+    .cta-cell { border-radius:6px; background-color:{{ brand.primary_color }}; }
+    .cta-link { display:inline-block; padding:14px 30px; font-family:Arial,Helvetica,sans-serif;
+                font-size:16px; font-weight:bold; color:{{ brand.text_on_primary }};
+                text-decoration:none; }
+    .rule { border-top:1px solid #E3E6EB; font-size:0; line-height:0; height:1px; }
+    .footer { padding:24px 32px 32px 32px; font-family:Arial,Helvetica,sans-serif;
+              font-size:12px; line-height:20px; color:#8A94A3; }
+    .footer a { color:#8A94A3; }
+    .sources { font-size:12px; line-height:20px; color:#8A94A3; }
+    @media only screen and (max-width:620px) {
+      .container { width:100% !important; }
+      .body-cell { padding:24px 20px !important; }
+      .band { padding:22px 20px !important; }
+      .footer { padding:20px !important; }
+      h1 { font-size:22px !important; line-height:28px !important; }
+    }
+  </style>
+</head>
+<body>
+  {# Preheader: shown in the inbox list beside the subject, hidden in the body.
+     The trailing whitespace stops the client pulling body copy in after it. #}
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#FFFFFF;">
+    {{ preview_text }}&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+  </div>
+
+  <table role="presentation" class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0">
+
+          <tr>
+            <td class="band">
+              {% if brand.logo_url %}
+              <img src="{{ brand.logo_url }}" width="140" alt="{{ brand.name }}" style="display:block;" />
+              {% else %}
+              <span class="brandname">{{ brand.name }}</span>
+              {% endif %}
+            </td>
+          </tr>
+
+          <tr>
+            <td class="body-cell">
+              <h1>{{ content.title }}</h1>
+              {% if content.summary %}
+              <p class="lede">{{ content.summary }}</p>
+              {% endif %}
+              {% for para in paragraphs %}
+              <p>{{ para }}</p>
+              {% endfor %}
+
+              {% if content.cta %}
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 8px 0;">
+                <tr>
+                  <td class="cta-cell" align="center">
+                    <a href="{{ cta_url }}" class="cta-link">{{ content.cta }}</a>
+                  </td>
+                </tr>
+              </table>
+              {% endif %}
+            </td>
+          </tr>
+
+          {% if source_urls %}
+          <tr><td class="rule">&nbsp;</td></tr>
+          <tr>
+            <td class="body-cell" style="padding-top:20px;padding-bottom:20px;">
+              <p class="sources"><strong>Sources</strong><br />
+                {% for url in source_urls %}
+                <a href="{{ url }}" style="color:#5A6472;">{{ url }}</a><br />
+                {% endfor %}
+              </p>
+            </td>
+          </tr>
+          {% endif %}
+
+          <tr><td class="rule">&nbsp;</td></tr>
+          <tr>
+            <td class="footer">
+              {{ brand.name }}{% if brand.website %} &middot; <a href="{{ brand.website }}">{{ brand.website }}</a>{% endif %}<br />
+              {{ brand.address }}<br /><br />
+              You are receiving this because you subscribed to updates from {{ brand.name }}.<br />
+              <a href="{{ brand.unsubscribe_url }}">Unsubscribe</a>
+            </td>
+          </tr>
+
+        </table>
+        <!--[if mso]></td></tr></table><![endif]-->
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

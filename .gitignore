@@ -1,0 +1,44 @@
+# ── Secrets — NEVER commit ───────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+.secrets.baseline.local
+
+# ── Runtime data (contains recipient PII — D-20) ─────────────────────────────
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+logs/
+*.eml
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# ── Editors / OS ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+*.swp
+
+# ── Build artefacts ──────────────────────────────────────────────────────────
+dist/
+build/
+node_modules/
+
+# NOTE: templates/email/*.html IS committed on purpose — it is the compiled
+# output of the .mjml sources, so the runtime needs no Node.js (D-18).

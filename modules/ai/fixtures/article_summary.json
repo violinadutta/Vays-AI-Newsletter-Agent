@@ -1,0 +1,48 @@
+[
+  {
+    "headline": "Dell launches PowerEdge R7xx with improved power efficiency",
+    "key_points": [
+      "Dell announced the PowerEdge R7xx series, a refresh of its two-socket rack server line.",
+      "The systems use a redesigned airflow path and higher-efficiency power supplies.",
+      "Dell reports reduced power draw at typical enterprise utilisation levels.",
+      "Availability is staged by region through the remainder of the quarter."
+    ],
+    "business_impact": "Lower running costs for organisations planning a data centre refresh, offset against the migration effort across an existing estate.",
+    "technical_facts": [
+      "PowerEdge R7xx series",
+      "Two-socket rack form factor",
+      "Redesigned airflow path"
+    ],
+    "category": "Product Launch",
+    "relevance_score": 8
+  },
+  {
+    "headline": "Quarterly threat report highlights shift in ransomware targeting",
+    "key_points": [
+      "The quarterly report finds attackers increasingly targeting mid-sized organisations.",
+      "Initial access is most often gained through unpatched edge devices.",
+      "Median dwell time before detection has shortened compared with the previous quarter."
+    ],
+    "business_impact": "Mid-market IT teams should prioritise edge device patching, which the report identifies as the most common entry point.",
+    "technical_facts": [
+      "Edge device exploitation as primary initial access vector"
+    ],
+    "category": "Security",
+    "relevance_score": 9
+  },
+  {
+    "headline": "New managed service simplifies hybrid cloud networking",
+    "key_points": [
+      "The service provides managed connectivity between on-premises estates and public cloud regions.",
+      "Configuration is handled through a single console rather than per-site setup.",
+      "Existing customers can migrate without re-addressing their networks."
+    ],
+    "business_impact": "Reduces the operational overhead of running hybrid connectivity for teams without a dedicated network engineering function.",
+    "technical_facts": [
+      "Single-console configuration",
+      "No re-addressing required for migration"
+    ],
+    "category": "Networking",
+    "relevance_score": 7
+  }
+]

@@ -1,0 +1,62 @@
+name: article_summary
+version: "1.0.0"
+description: >
+  Stage 1 — faithful, extractive-leaning compression of a single article.
+  This stage does not sell; it extracts. Stage 2 does the writing.
+created: 2026-08-07
+model_tested: openai/gpt-oss-120b
+
+defaults:
+  # Low temperature: fidelity matters more than flair here, and every fabricated
+  # detail introduced at this stage gets amplified by stage 2.
+  temperature: 0.3
+  top_p: 0.9
+  # Raised from 1024 after a live failure on a real 1,100-word article: the
+  # response was cut off mid-JSON and Groq reported it as `json_validate_failed`,
+  # not a length finish. Measured output for that article was ~1,980 tokens, so
+  # 2048 is not enough headroom either. gpt-oss models also emit reasoning tokens,
+  # which do not appear in the visible output but do count.
+  max_tokens: 4096
+
+required_context:
+  - article
+  - audience_label
+
+output_schema: article_summary
+
+system: |
+  {% include "_shared/system_persona.md" %}
+
+  {% include "_shared/untrusted_input_rules.md" %}
+
+user: |
+  Read the article below and extract its key information.
+
+  <<<ARTICLE>>>
+  Title: {{ article.title }}
+  {% if article.url %}Source: {{ article.url }}{% endif %}
+  {% if article.published_at %}Published: {{ article.published_at }}{% endif %}
+
+  {{ article.cleaned_text }}
+  <<<END ARTICLE>>>
+
+  Extract:
+
+  1. headline — a clear, factual headline. No more than 80 characters.
+  2. key_points — 3 to 5 concrete points, each a complete sentence. Each must be
+     supported by the article text.
+  3. business_impact — one sentence: why a {{ audience_label }} customer should care.
+  4. technical_facts — specific verifiable details actually stated in the article
+     (product names, capabilities, availability, figures). Return an empty list if
+     the article contains none. Do NOT infer or extrapolate.
+  5. category — the single best fit from the allowed values.
+  6. relevance_score — 1 to 10, how relevant this is to a {{ audience_label }} audience.
+
+  Base everything only on the article above. If the article is thin, say less —
+  do not fill the gaps with general knowledge.
+
+examples:
+  - note: >
+      Kept deliberately short. This stage is judged on faithfulness, and long
+      exemplars encourage the model to match their length rather than the
+      source article's substance.

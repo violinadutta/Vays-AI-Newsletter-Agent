@@ -1,0 +1,166 @@
+[project]
+name = "vays-newsletter-ai"
+version = "0.1.0"
+description = "AI-powered newsletter generation and distribution platform for Vays Infotech"
+# Verified working end-to-end on CPython 3.14.3 (Windows 11, AMD64) on 2026-08-06:
+# all 132 packages resolved wheel-only, and trafilatura / lxml / pyarrow / bcrypt /
+# SQLAlchemy were exercised at runtime, not merely imported.
+#
+# Floor is 3.11 (we use `X | Y` unions and `tomllib`). Ceiling is exclusive of 3.15
+# because that version does not exist yet and therefore cannot have been tested —
+# an untested upper bound is how a handover install breaks a year from now.
+#
+# For a byte-identical install on another machine, use requirements.lock.txt.
+requires-python = ">=3.11,<3.15"
+
+# =============================================================================
+#  Ruff — lint + format
+# =============================================================================
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [".venv", "migrations/versions", "data", "logs"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "C4",       # comprehensions
+    "UP",       # pyupgrade
+    "ANN",      # missing type annotations
+    "S",        # bandit — security
+    "T20",      # no print() in library code
+    "SIM",      # simplify
+    "PTH",      # use pathlib, not os.path  (Windows-safety)
+    "RET",      # return consistency
+    "TRY",      # exception anti-patterns
+]
+ignore = [
+    "TRY003",  # long messages inside raise — ours are deliberately user-facing
+               # and explanatory (TRD §7.3), which is the whole point of the
+               # exception hierarchy. Enforcing terse messages would fight it.
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Asserts are the point of a test; "hardcoded password" findings are fixture
+# values like "too-short" that exist precisely to be rejected by validation;
+# S104 fires on the string "0.0.0.0" in the SSRF block-list test data.
+"tests/*"   = ["S101", "ANN", "S105", "S106", "S104"]
+# JSON Schema is an untyped recursive tree. Annotating the walkers with anything
+# other than Any means casting at every branch, which adds noise without adding
+# safety — the shape is validated by the round-trip tests instead.
+"core/schemas.py" = ["ANN401"]
+# Settings values are arbitrary JSON by definition; `Any` is the honest type.
+"modules/repository/settings_repo.py" = ["ANN401"]
+# Same reason one layer up: a setting is a str, int, float or bool depending on
+# which one it is, and the concrete type is carried by the registry entry and
+# enforced by Pydantic on assignment. A union here would be broader than `Any`
+# is imprecise, and would still need narrowing at every call site.
+"services/settings_service.py" = ["ANN401"]
+# Same reason as core/schemas.py: this walks an arbitrary JSON Schema tree.
+"modules/ai/mock_provider.py" = ["ANN401"]
+# Prompt context is arbitrary by definition - it is whatever a given
+# template declares it needs.
+"modules/ai/prompt_registry.py" = ["ANN401"]
+# Structlog context is arbitrary key/values by design; the handler has to
+# accept whatever a log call passed.
+"modules/repository/log_handler.py" = ["ANN401"]
+# Streamlit pages assemble markup strings; a few exceed the line budget
+# and splitting them mid-HTML hurts readability more than it helps. ANN401 is
+# for the settings widget dispatcher, whose return really is "whatever that
+# widget yields" — a text box gives a str, a checkbox a bool.
+"ui/pages/*.py" = ["E501", "ANN401"]
+# st.session_state is an untyped bag; the typed accessors above the generic
+# get/set are where the safety actually lives.
+"ui/state.py" = ["ANN401"]
+"scripts/*" = ["T20", "E501"]      # CLI tools print; the notebook builder embeds long URLs
+# (No notebooks any more — the Colab notebook was removed with D-21.)
+
+[tool.ruff.lint.flake8-bugbear]
+# `except Exception: pass` is banned outright (TRD §7.2) — B902/BLE handled by review.
+
+# =============================================================================
+#  mypy
+# =============================================================================
+[tool.mypy]
+python_version = "3.11"
+# Teaches mypy that pydantic Field(...) defaults are defaults, so constructing a
+# model without them is valid. Without it, every `CampaignFilter()` is a false
+# "missing named argument" error.
+plugins = ["pydantic.mypy"]
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_equality = true
+exclude = ["migrations/", "\\.venv/"]
+
+# Third-party packages without type stubs.
+[[tool.mypy.overrides]]
+module = [
+    "trafilatura.*", "newspaper.*", "premailer.*", "py3langid.*",
+    "structlog.*",
+    "colorama",  # optional, imported only to detect ANSI colour support on Windows
+]
+ignore_missing_imports = true
+
+# =============================================================================
+#  pytest
+# =============================================================================
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers --cov=core --cov=config --cov=modules --cov=services --cov-report=term-missing"
+markers = [
+    "integration: touches a real database or filesystem",
+    "e2e: drives the real Streamlit app through AppTest",
+    "network: requires network access (skipped by default in CI)",
+]
+filterwarnings = ["error::DeprecationWarning"]
+
+[tool.coverage.run]
+omit = ["tests/*", "migrations/*", "ui/*", "scripts/*"]
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedError"]
+
+# =============================================================================
+#  import-linter — makes the layer rule (TRD §1.2) a build failure, not a
+#  code-review convention. An architecture rule nobody enforces is a suggestion.
+# =============================================================================
+[tool.importlinter]
+root_packages = ["core", "config", "modules", "services", "ui"]
+# Required so the "forbidden external module" contracts (Streamlit in the service
+# layer, and every ML runtime anywhere) are actually evaluated rather than skipped.
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Layers point downward only"
+type = "layers"
+layers = ["ui", "services", "modules", "core"]
+
+[[tool.importlinter.contracts]]
+name = "core is pure — no I/O, no frameworks"
+type = "forbidden"
+source_modules = ["core"]
+forbidden_modules = ["streamlit", "sqlalchemy", "httpx", "openai", "pandas"]
+
+[[tool.importlinter.contracts]]
+name = "Business logic never imports Streamlit"
+type = "forbidden"
+source_modules = ["services", "modules"]
+forbidden_modules = ["streamlit"]
+
+[[tool.importlinter.contracts]]
+name = "No local inference runtime anywhere (D-13)"
+type = "forbidden"
+source_modules = ["core", "config", "modules", "services", "ui"]
+forbidden_modules = [
+    "torch", "tensorflow", "jax", "transformers", "sentence_transformers",
+    "accelerate", "bitsandbytes", "optimum", "llama_cpp", "ctransformers",
+    "exllamav2", "gpt4all", "onnxruntime", "vllm", "ollama",
+]

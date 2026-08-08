@@ -1,0 +1,11 @@
+{
+  "title": "What Dell's PowerEdge Refresh Means for Your Next Hardware Cycle",
+  "summary": "Dell has refreshed its mainstream two-socket rack line with the PowerEdge R7xx series, focusing on power efficiency rather than raw performance. For teams planning a data centre refresh, the question is whether the running-cost savings justify the migration effort across an existing estate.",
+  "newsletter": "Dell has announced the PowerEdge R7xx series, a refresh of its mainstream two-socket rack servers. The headline change is not performance but efficiency: a redesigned airflow path and higher-efficiency power supplies, which Dell says reduce power draw at typical enterprise utilisation levels.\n\nThat framing is worth taking seriously. For most organisations, the constraint on a data centre refresh is rarely compute — it is power, cooling and rack space. A platform that does the same work for less draw changes the arithmetic on how much you can fit in an existing footprint.\n\nThe practical question is timing. If your estate is mid-cycle, the efficiency gains are unlikely to justify an early refresh on their own. If you are already planning one, they are worth modelling against your actual utilisation rather than the headline figures.\n\nAvailability is staged by region through the remainder of the quarter. If you would like help modelling what this means for your environment, we are happy to walk through it with you.",
+  "subject": "Dell's new servers cut power, not performance",
+  "preview_text": "What the PowerEdge R7xx refresh means for your refresh cycle",
+  "cta": "Talk to our team",
+  "keywords": ["dell", "poweredge", "data centre", "power efficiency", "hardware refresh"],
+  "category": "Product Launch",
+  "tone": "professional"
+}
