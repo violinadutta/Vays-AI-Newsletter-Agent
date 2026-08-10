@@ -34,6 +34,7 @@ from core.exceptions import (
 from core.models import (
     CampaignSendReport,
     EmailMessage,
+    InlineImage,
     NewsletterContent,
     Recipient,
     RecipientValidation,
@@ -48,7 +49,7 @@ from modules.repository.campaign_repo import CampaignRepository
 from modules.repository.database import unit_of_work
 from modules.repository.recipient_repo import RecipientRepository, SuppressionRepository
 from modules.repository.send_repo import SendRepository
-from modules.template.brand import resolve_brand
+from modules.template.brand import LOGO_CID, ResolvedBrand, logo_file, resolve_brand
 from modules.template.renderer import TemplateRenderer, apply_merge_tokens
 
 log = get_logger(__name__)
@@ -367,6 +368,7 @@ class DeliveryService:
             text=apply_merge_tokens(rendered.text, recipient),
             headers=unsubscribe_headers(brand.unsubscribe_url, settings.sender_address),
             tags=[f"campaign-{campaign_id}"] if campaign_id else [],
+            inline_images=_logo_images(brand),
         )
 
     @staticmethod
@@ -425,3 +427,44 @@ class DeliveryService:
         with unit_of_work() as session:
             SuppressionRepository(session).add(email, reason)
         log.info("recipient.suppressed", reason=reason.value)
+
+
+#: Cached logo bytes, keyed by path and modification time. A 600-address campaign
+#: would otherwise read the same small file 600 times; keying on mtime means
+#: replacing the file still takes effect without a restart.
+_LOGO_CACHE: dict[tuple[str, float], bytes] = {}
+
+
+def _logo_images(brand: ResolvedBrand) -> list[InlineImage]:
+    """Load the logo for embedding, if the brand uses an embedded one.
+
+    Returns an empty list for a hosted (``http``) logo or no logo at all — and
+    also when the file has gone missing, because a broken logo must never be the
+    reason a campaign fails to send.
+    """
+    if brand.logo_url != f"cid:{LOGO_CID}":
+        return []
+
+    path = logo_file(get_settings().brand.logo_path)
+    if path is None:
+        return []
+
+    try:
+        key = (str(path), path.stat().st_mtime)
+        data = _LOGO_CACHE.get(key)
+        if data is None:
+            data = path.read_bytes()
+            _LOGO_CACHE.clear()  # only ever one logo; do not grow unbounded
+            _LOGO_CACHE[key] = data
+    except OSError:
+        log.warning("email.logo_unreadable", path=str(path))
+        return []
+
+    subtype = {".png": "png", ".jpg": "jpeg", ".jpeg": "jpeg", ".gif": "gif"}.get(
+        path.suffix.lower(), "png"
+    )
+    return [
+        InlineImage(
+            content_id=LOGO_CID, data=data, subtype=subtype, filename=f"logo{path.suffix.lower()}"
+        )
+    ]

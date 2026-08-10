@@ -15,10 +15,10 @@
 | Owner | Sidhant (sidhant@deephorizon.io) |
 | Repo root | `c:\Users\MY PC\OneDrive\Desktop\vays-ai-new` |
 | Started | 2026-08-05 |
-| Current phase | **Build — M1–M8 complete and verified; M9 (docs & handover) is all that remains** |
-| Code written | ~11k lines across `core/ config/ modules/ services/ ui/`; **795 tests, 90% coverage** |
-| Runs with | `streamlit run app.py` → login → 6 pages, live Groq generation, console email |
-| Not yet done | M9 · real email-client render check (M5) · **no git repository yet** |
+| Current phase | **M1–M9 complete. Feature-complete and handover-ready.** |
+| Code written | ~11k lines across `core/ config/ modules/ services/ ui/`; **835 tests, 92% coverage** |
+| Runs with | `run.bat` → login → 6 pages, live Groq generation, real Gmail sending |
+| Not yet done | Visual email-client verification (M5, needs a human with Outlook/Gmail) · handover walkthrough with Vays |
 
 ---
 
@@ -204,6 +204,94 @@ Everything crossing a boundary is a **Pydantic model**, never a raw dict.
 | 2026-08-07 | **M7 — Streamlit UI (6 pages)** | ✅ **Complete & verified** | 758 tests, 89% cov. App boots headless (HTTP 200) and all 6 pages render through `AppTest`. DB log sink added so the Logs page has data |
 
 | 2026-08-08 | **M8 — Auth, settings & observability** | ✅ **Complete & verified live** | 795 tests, 90% cov. Done-criterion run end to end: a second account logs in, repoints the LLM endpoint, tests it, survives a restart, and reverts — no file, no terminal |
+
+### M9 — the handover pack (2026-08-10)
+
+835 tests, 92% coverage, six gates green. Docs written: `README.md`,
+`SETUP_GUIDE`, `RUNBOOK`, `ARCHITECTURE`, `SWAP_THE_LLM`, `PROMPT_GUIDE`,
+`KNOWN_ISSUES`, and four ADRs covering the decisions that were *reversed*
+(Colab→Groq, MJML dropped, two-layer config, CID logo) — those are the ones a
+future developer would otherwise re-litigate.
+
+**`generation_service.py` had 0% coverage** — the orchestrator every generation
+flows through, entirely untested, while the suite reported 90% overall. Now
+**100%**, via a stub engine rather than `MockProvider` so each failure mode can
+be provoked directly. **Fourth instance of the dead-code/untested-core pattern**
+(`app_logs`, `settings`, `set_password`, now this). A coverage percentage hides
+a zero.
+
+`run.bat` checks the four things that actually go wrong on a fresh machine —
+missing venv, missing `.env`, unapplied migrations, **no user accounts** — and
+names the fix for each. A login screen with no accounts is a dead end, and
+that check is the difference between a 2-minute start and an hour lost.
+
+CI runs all six gates on Windows + Ubuntu × Python 3.11/3.12. Three details
+worth keeping: the zero-local-inference guard runs **first** (if someone adds
+torch, nothing else matters); `pip-audit` is `continue-on-error` and therefore
+advisory — a green tick does not mean clean; and a dedicated job greps **full
+git history** for `gsk_`/`xkeysib-` keys, because a secret deleted in a later
+commit is still leaked. Verified: history is clean and `.env` was never tracked.
+
+Every internal doc link is checked by a script — all resolve. The test suite was
+also run under CI conditions (no `.env`, env vars only) to prove the workflow
+config is right rather than plausible.
+
+### Post-M8 fixes from the first real Gmail send (2026-08-08)
+
+The first live send exposed three things no test could have caught, because all
+three are only visible in a received email.
+
+**1. The logo never rendered, and could not have.** `resolve_brand` put
+`logo_path` (`assets/logo.png`, a *filesystem* path) straight into `<img src>`.
+No mail client can resolve that. The `assets/` directory did not exist either,
+and `minimal.html` had no logo block at all.
+Fixed with **CID embedding** — the only approach that works without web hosting,
+since Gmail and Outlook both strip `data:` URIs. `resolve_logo_url()` now returns
+`cid:vays-logo` for a local file and passes an `http(s)` URL through unchanged,
+so the hosted path stays open for Vays. `build_mime_body()` in `modules/email/base.py`
+attaches the bytes as `multipart/related` under the HTML alternative — attaching
+at the top level instead makes it an ordinary attachment and the `cid:` resolves
+to nothing. Shared by the console and SMTP providers so the `.eml` preview and
+the real send cannot drift.
+A missing logo file degrades to the text fallback; it must never block a send.
+Also: `modern.html` was putting the logo on the `#0B5FFF` band, which would have
+made a dark logo unreadable. Logos now get a white plate with the brand colour
+as a rule beneath.
+
+**2. Asterisks in the delivered copy — my prompt caused it.**
+`newsletter_compose` v1.0.0 line 53 said *"Give each story a short bold heading"*.
+The field is plain text, so the model reached for `**Heading**` and the markers
+reached the customer. Fixed at both ends:
+`v1.1.0` bans markdown explicitly and asks for lead-in sentences instead, and
+`_split_paragraphs` now converts a whitelist of markdown to real HTML as a safety
+net — a prompt instruction is not a guarantee, and this failure is visible to the
+recipient. **Order is the security property**: each paragraph is escaped *first*,
+then our own tags are inserted into the escaped string, so this cannot become an
+injection hole. Single `*` is deliberately unsupported (ambiguous against `5 * 3`).
+
+**3. The copy read as machine-written.** Added `_shared/human_voice.md` — a
+concrete list of the tells (uniform sentence length, signposting, rule-of-three,
+decorative hedging, "delve/leverage/seamless") rather than a vague "be natural".
+Temperature raised 0.7 → 0.85; the banned-construction list is what keeps the
+extra variance from wandering.
+
+**Measured A/B on the same input, live against Groq:**
+
+| | v1.0.0 | v1.1.0 |
+|---|---|---|
+| Asterisks in body | **10** | **0** |
+| Opening | "Dell's latest PowerEdge R7xx servers redesign…" | "Dell's new PowerEdge R7xx servers move more air through each watt." |
+| Contractions | none | yes |
+
+Prompts are versioned, not edited (D-6): v1.0.0 still resolves for any campaign
+that recorded it. `field_regenerate` got a matching v1.1.0, or regenerating the
+body would have reverted the voice and reintroduced the asterisks.
+
+⚠ **Process note.** The `.eml` generation script assumed `EMAIL_PROVIDER=console`
+without asserting it. `.env` had been switched to `smtp`, so three `send_test()`
+calls went to Gmail for real. The address was `recipient@example.com` (RFC 2606,
+undeliverable) so nobody received anything, but it consumed quota and generated
+bounces. **Any script that can send now asserts the provider first.**
 
 ### M8 — the settings table finally has a writer
 
@@ -403,7 +491,7 @@ Also observed live and handled correctly: Fortinet's robots.txt disallow, a Micr
 | M6 | Email engine + campaign manager | ✅ Complete |
 | M7 | Streamlit UI (6 pages) | ✅ Complete |
 | M8 | Auth, settings, logs, health | ✅ Complete — verified live |
-| M9 | Tests, README, handover pack | ⬜ Not started |
+| M9 | Tests, README, handover pack | ✅ Complete |
 
 ---
 

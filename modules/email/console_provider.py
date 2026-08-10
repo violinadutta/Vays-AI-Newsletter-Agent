@@ -22,7 +22,7 @@ from config import get_logger, get_settings
 from config.constants import OUTBOX_DIR
 from core.enums import SendStatus
 from core.models import EmailMessage, HealthStatus, SendResult
-from modules.email.base import EmailProvider
+from modules.email.base import EmailProvider, build_mime_body
 
 log = get_logger(__name__)
 
@@ -59,11 +59,7 @@ class ConsoleEmailProvider(EmailProvider):
         for key, value in message.headers.items():
             mime[key] = value
 
-        # text/plain first, then text/html: RFC 2046 says the *last* alternative
-        # is the most preferred, so this order makes clients show the HTML while
-        # text-only clients still get a readable message.
-        mime.set_content(message.text)
-        mime.add_alternative(message.html, subtype="html")
+        build_mime_body(mime, message)
 
         path = self.outbox / self._filename(message)
         path.write_bytes(mime.as_bytes())

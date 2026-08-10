@@ -1,0 +1,122 @@
+name: CI
+
+# The six gates that were run by hand at every milestone. Running them here is
+# what stops them quietly rotting after handover.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  PYTHONUTF8: "1" # Windows runners default to cp1252 and mangle scraped titles
+
+jobs:
+  quality:
+    name: ${{ matrix.os }} · Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows is the deployment target and the only one that has to work.
+        # Ubuntu is included because it is where a future Docker image would run,
+        # and because path handling bugs surface on the platform you do not use.
+        os: [windows-latest, ubuntu-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      # ── Gate 1: the constraint that cannot be allowed to erode ────────────
+      # First, deliberately. If someone adds torch, nothing else matters — the
+      # project has stopped being what it is (D-13).
+      - name: Zero local inference
+        run: python scripts/check_no_local_inference.py
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Format
+        run: ruff format --check .
+
+      - name: Types
+        run: mypy core config modules services
+
+      - name: Architecture boundaries
+        run: lint-imports
+
+      - name: Prompts render and declare a sane token budget
+        run: python scripts/validate_prompts.py
+
+      # No .env on a runner. `build_settings(env_file=None)` is what makes the
+      # suite read only real environment variables, so these are the whole
+      # configuration — and they are all non-secret by construction.
+      - name: Tests
+        env:
+          APP_SECRET_KEY: ci-only-secret-key-not-used-anywhere-else-32chars
+          APP_ENV: local
+          LLM_PROVIDER: mock
+          EMAIL_PROVIDER: console
+        run: pytest --cov-report=xml --cov-report=term
+
+      - name: Upload coverage
+        if: matrix.os == 'windows-latest' && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+          if-no-files-found: ignore
+
+  security:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      # Advisory rather than blocking: a CVE in a transitive dependency should
+      # start a conversation, not stop a handover demo on a Friday. Read the
+      # output — do not assume a green tick means clean.
+      - name: Audit pinned dependencies
+        continue-on-error: true
+        run: pip-audit -r requirements.lock.txt --desc
+
+  secrets:
+    name: No secrets committed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history: a key deleted in a later commit is still leaked
+
+      - name: Scan history for API keys
+        run: |
+          if git grep -I -n -E "(gsk_[A-Za-z0-9]{20,}|xkeysib-[A-Za-z0-9]{20,})" \
+               $(git rev-list --all) -- ':!*.md' ':!.github/*'; then
+            echo "::error::A live API key appears in git history. Rotate it immediately."
+            exit 1
+          fi
+          echo "No API keys found in history."
+
+      - name: .env must never be tracked
+        run: |
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "::error::.env is tracked by git. It holds secrets (D-19)."
+            exit 1
+          fi
+          echo ".env is not tracked."

@@ -1,0 +1,68 @@
+name: field_regenerate
+version: "1.1.0"
+description: >
+  (1.1.0) Adds _shared/human_voice.md so a regenerated field matches the voice
+  of newsletter_compose v1.1.0. Without it, regenerating the body reverted the
+  copy to the machine-written register and reintroduced markdown asterisks.
+
+  Regenerate exactly one field of an existing draft (FR-3.8), leaving the user's
+  edits to every other field untouched.
+created: 2026-08-07
+model_tested: openai/gpt-oss-120b
+
+defaults:
+  # Higher than composition: the user asked for something *different*. At 0.7 the
+  # model tends to return a near-paraphrase, which reads as a broken button.
+  temperature: 0.85
+  top_p: 0.95
+  # gpt-oss models emit internal reasoning tokens that count toward max_tokens but
+  # never appear in the response. Budgets sized to the visible output get cut off
+  # mid-JSON, which Groq reports as `json_validate_failed` rather than a length
+  # finish. 2048 is the practical floor for any structured output here.
+  max_tokens: 2048
+
+required_context:
+  - draft
+  - field_name
+  - field_constraints
+
+output_schema: single_field
+
+system: |
+  {% include "_shared/system_persona.md" %}
+
+  {% include "_shared/human_voice.md" %}
+
+  You are revising one field of a newsletter that already exists. Everything else
+  about it is already approved. Do not comment on the other fields, and do not
+  attempt to improve them.
+
+user: |
+  Here is the existing newsletter:
+
+  Title: {{ draft.title }}
+  Subject: {{ draft.subject }}
+  Preview text: {{ draft.preview_text }}
+  CTA: {{ draft.cta }}
+
+  Body:
+  {{ draft.newsletter }}
+
+  ---
+
+  Regenerate ONLY the {{ field_name }}.
+
+  Current value:
+  {{ current_value }}
+
+  {% if instruction %}
+  The user asked for this specifically: "{{ instruction }}"
+  {% endif %}
+
+  RULES
+  - Produce something meaningfully different from the current value. A paraphrase
+    is not a regeneration.
+  - Stay consistent with the body above. Introduce no new facts, products, dates
+    or figures.
+  {% include "_shared/length_rules.md" %}
+  {{ field_constraints }}

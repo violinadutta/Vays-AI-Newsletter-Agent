@@ -29,6 +29,13 @@
     .wrapper { width:100%; background-color:#F7F8FA; }
     .container { width:600px; max-width:600px; background-color:#FFFFFF; }
     .band { background-color:{{ brand.primary_color }}; padding:28px 32px; }
+    {# A logo is artwork with its own colours; dropping it on the brand colour
+       makes dark marks unreadable and clashes with anything cyan. Logos get a
+       white plate, with the brand colour kept as a rule beneath so the header
+       still reads as branded. The text fallback keeps the coloured band, where
+       `text_on_primary` guarantees contrast. #}
+    .band-logo { background-color:#FFFFFF; padding:24px 32px;
+                 border-bottom:3px solid {{ brand.primary_color }}; }
     .brandname { font-family:Arial,Helvetica,sans-serif; font-size:18px; font-weight:bold;
                  color:{{ brand.text_on_primary }}; letter-spacing:0.2px; }
     .body-cell { padding:32px; font-family:Arial,Helvetica,sans-serif; color:#14181F; }
@@ -48,6 +55,7 @@
       .container { width:100% !important; }
       .body-cell { padding:24px 20px !important; }
       .band { padding:22px 20px !important; }
+      .band-logo { padding:20px !important; }
       .footer { padding:20px !important; }
       h1 { font-size:22px !important; line-height:28px !important; }
     }
@@ -67,9 +75,9 @@
         <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0">
 
           <tr>
-            <td class="band">
+            <td class="{% if brand.logo_url %}band-logo{% else %}band{% endif %}">
               {% if brand.logo_url %}
-              <img src="{{ brand.logo_url }}" width="140" alt="{{ brand.name }}" style="display:block;" />
+              <img src="{{ brand.logo_url }}" width="180" alt="{{ brand.name }}" style="display:block;width:180px;max-width:180px;height:auto;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;" />
               {% else %}
               <span class="brandname">{{ brand.name }}</span>
               {% endif %}

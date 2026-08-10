@@ -9,6 +9,8 @@ slightly wrong.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from email.message import EmailMessage as MIMEMessage
+from typing import cast
 
 from core.models import EmailMessage, HealthStatus, SendResult
 
@@ -63,3 +65,46 @@ def unsubscribe_headers(unsubscribe_url: str, sender_address: str) -> dict[str, 
         "List-Unsubscribe": f"<{mailto}>, <{unsubscribe_url}>",
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     }
+
+
+def build_mime_body(mime: MIMEMessage, message: EmailMessage) -> None:
+    """Fill in the body parts of a MIME message, embedding any inline images.
+
+    Shared by the console and SMTP providers so the two cannot drift — a logo
+    that renders in the ``.eml`` preview and not in the real send would be a
+    particularly annoying bug to chase.
+
+    Structure produced:
+
+    * no images → ``multipart/alternative`` [text, html]
+    * with images → ``multipart/alternative`` where the HTML alternative becomes
+      ``multipart/related`` [html, image, …]
+
+    Order matters: RFC 2046 says the *last* alternative is the most preferred,
+    so plain text goes first and clients that can render HTML choose the HTML.
+    """
+    mime.set_content(message.text)
+    mime.add_alternative(message.html, subtype="html")
+
+    if not message.inline_images:
+        return
+
+    # The HTML alternative is the last part; attaching the images to it turns
+    # that part into multipart/related, which is what binds `cid:` references to
+    # the image data. Attaching them to the top level instead would make them
+    # ordinary attachments, and the `cid:` reference would resolve to nothing.
+    # cast: get_payload() is typed as returning str | list[Message], and the
+    # modern add_related() lives on EmailMessage rather than Message. Both parts
+    # were just created by set_content/add_alternative above, so the concrete
+    # type is known here even though the signature cannot express it.
+    parts = cast("list[MIMEMessage]", mime.get_payload())
+    html_part = parts[-1]
+    for image in message.inline_images:
+        html_part.add_related(
+            image.data,
+            maintype="image",
+            subtype=image.subtype,
+            cid=f"<{image.content_id}>",
+            filename=image.filename,
+            disposition="inline",
+        )

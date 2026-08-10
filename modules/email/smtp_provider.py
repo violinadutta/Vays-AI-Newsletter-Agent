@@ -16,7 +16,7 @@ from config import get_logger, get_settings
 from core.enums import SendStatus
 from core.exceptions import EmailAuthError
 from core.models import EmailMessage, HealthStatus, SendResult
-from modules.email.base import EmailProvider
+from modules.email.base import EmailProvider, build_mime_body
 
 log = get_logger(__name__)
 
@@ -81,8 +81,7 @@ class SMTPEmailProvider(EmailProvider):
         for key, value in message.headers.items():
             mime[key] = value
 
-        mime.set_content(message.text)
-        mime.add_alternative(message.html, subtype="html")
+        build_mime_body(mime, message)
 
         try:
             with self._connect() as server:

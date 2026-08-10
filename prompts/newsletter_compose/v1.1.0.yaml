@@ -1,0 +1,103 @@
+name: newsletter_compose
+version: "1.1.0"
+description: >
+  Stage 2 — turn per-article summaries into publishable newsletter copy.
+  The nine-field contract from the brief.
+
+  Changed from 1.0.0 after a live send showed two problems in the received
+  email. First, 1.0.0 asked for "a short bold heading" per story; the model has
+  no markup available in a plain-text field, so it emitted `**Heading**` and the
+  asterisks reached the customer verbatim. Headings are now lead-in sentences,
+  and markdown is banned explicitly. Second, the copy read as machine-written —
+  uniform sentence lengths, signposting, triads — so `_shared/human_voice.md`
+  now carries a concrete list of the tells to avoid.
+created: 2026-08-08
+model_tested: openai/gpt-oss-120b
+
+defaults:
+  # Raised from 0.7: 0.7 with top_p 0.9 produces the safe, evenly-weighted
+  # phrasing that reads as generated. The banned-construction list is what keeps
+  # the extra variance from wandering, so the two changes go together.
+  temperature: 0.85
+  top_p: 0.95
+  # Raised from 1024 after a live failure on a real 1,100-word article: the
+  # response was cut off mid-JSON and Groq reported it as `json_validate_failed`,
+  # not a length finish. Measured output for that article was ~1,980 tokens, so
+  # 2048 is not enough headroom either. gpt-oss models also emit reasoning tokens,
+  # which do not appear in the visible output but do count.
+  max_tokens: 4096
+
+required_context:
+  - summaries
+  - tone
+  - audience_label
+  - length_words
+  - brand_name
+
+output_schema: newsletter
+
+system: |
+  {% include "_shared/system_persona.md" %}
+
+  {% include "_shared/human_voice.md" %}
+
+  {% include "_shared/tone/" + tone + ".md" %}
+
+  {% include "_shared/audience/" + audience + ".md" %}
+
+user: |
+  Write a customer newsletter for {{ brand_name }} covering the stories below.
+
+  {% for s in summaries %}
+  --- STORY {{ loop.index }} ({{ s.category }}, relevance {{ s.relevance_score }}/10) ---
+  {{ s.headline }}
+  {% for point in s.key_points %}
+  - {{ point }}
+  {% endfor %}
+  Why it matters: {{ s.business_impact }}
+  {% if s.technical_facts %}
+  Verified details: {{ s.technical_facts | join("; ") }}
+  {% endif %}
+  {% endfor %}
+
+  STRUCTURE
+  {% if summaries | length > 1 %}
+  - Cover every story. Lead with the highest relevance score.
+  - Move between stories with a sentence that carries meaning, not a label.
+    Write "Cisco's update is smaller but lands sooner." — never a heading, and
+    never a bare vendor name on its own line.
+  {% else %}
+  - Single-story format: open with the consequence, then the substance, then
+    what the reader should do about it.
+  {% endif %}
+  - Newsletter body: approximately {{ length_words }} words, in paragraphs
+    separated by a single blank line. No markdown, no headings, no bullets.
+  - Do not invent a closing offer, discount, event or deadline.
+
+  {% include "_shared/length_rules.md" %}
+
+  - subject: MAXIMUM 60 characters. Specific, no clickbait, no ALL CAPS, no leading
+    emoji. Do not begin with "Newsletter" or "Update". Lead with the concrete
+    fact a reader would repeat to a colleague.
+  - preview_text: MAXIMUM 100 characters. It must complement the subject, never
+    repeat it.
+  - cta: MAXIMUM 40 characters. 2 to 5 words, action-oriented ("See the specs",
+    not "Click here").
+  - title: MAXIMUM 120 characters.
+  - summary: between 50 and 600 characters. An executive summary of the whole
+    newsletter, not of one story.
+  - keywords: 3 to 8 lowercase terms drawn from the actual content.
+  - tone: return exactly "{{ tone }}".
+
+  Use ONLY facts from the stories above.
+
+  Before returning, reread the newsletter field and check three things: no
+  asterisk or hash characters anywhere; no two consecutive paragraphs opening
+  the same way; at least one sentence under eight words.
+
+examples:
+  - tone: professional
+    note: >
+      Exemplars are added here once real approved Vays newsletters exist. Until
+      then the tone fragments carry the voice — inventing a house style and
+      calling it an example would teach the model the wrong thing.

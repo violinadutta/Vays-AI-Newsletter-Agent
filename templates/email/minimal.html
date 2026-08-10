@@ -49,7 +49,14 @@
 
           <tr>
             <td class="body-cell">
+              {% if brand.logo_url %}
+              <p style="margin:0 0 16px 0;">
+                <img src="{{ brand.logo_url }}" width="120" alt="{{ brand.name }}"
+                     style="display:block;width:120px;max-width:120px;height:auto;border:0;outline:none;text-decoration:none;" />
+              </p>
+              {% else %}
               <p class="kicker">{{ brand.name }}</p>
+              {% endif %}
               <h1>{{ content.title }}</h1>
               {% if content.summary %}
               <p class="lede">{{ content.summary }}</p>

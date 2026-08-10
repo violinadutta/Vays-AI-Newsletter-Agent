@@ -27,6 +27,7 @@ from pathlib import Path
 import premailer
 from jinja2 import FileSystemLoader, StrictUndefined, select_autoescape
 from jinja2.sandbox import SandboxedEnvironment
+from markupsafe import Markup, escape
 
 from config import get_logger
 from config.constants import EMAIL_TEMPLATES_DIR
@@ -228,7 +229,7 @@ def build_plain_text(
     if content.summary:
         lines += [content.summary, ""]
 
-    lines += [_strip_markup(content.newsletter).strip(), ""]
+    lines += [strip_markdown(_strip_markup(content.newsletter)).strip(), ""]
 
     if content.cta:
         lines += [f"{content.cta}: {cta_url or brand.website or ''}".strip(), ""]
@@ -253,13 +254,68 @@ def _strip_markup(value: str) -> str:
     return _HTML_TAG.sub("", value)
 
 
-def _split_paragraphs(body: str) -> list[str]:
-    """Split the newsletter body into paragraphs for the template to loop over.
+#: Markdown emphasis the model emits despite being told not to. `**bold**` is by
+#: far the most common, because "write a bold heading" has no other expression in
+#: plain text. Single `*` is deliberately absent: it is ambiguous against a
+#: literal asterisk or a multiplication sign, and guessing wrong mangles copy.
+_MD_BOLD = re.compile(r"\*\*(?=\S)(.+?)(?<=\S)\*\*", re.DOTALL)
+_MD_BOLD_ALT = re.compile(r"__(?=\S)(.+?)(?<=\S)__", re.DOTALL)
+_MD_HEADING = re.compile(r"^\s{0,3}#{1,6}\s+(.+?)\s*$", re.MULTILINE)
+_MD_BULLET = re.compile(r"^\s{0,3}[-*+]\s+(.+?)\s*$", re.MULTILINE)
+
+
+def _split_paragraphs(body: str) -> list[Markup]:
+    """Split the newsletter body into paragraphs, converting markdown to HTML.
 
     Done here rather than in the template so all three layouts share one
     definition of what a paragraph is.
+
+    **Why markdown conversion belongs here.** The model is instructed to emit
+    plain prose, but an instruction is not a guarantee: asked for a "bold
+    heading" with no markup available, it reaches for ``**Heading**``, and those
+    asterisks then appear verbatim in the customer's inbox. Prompt wording is
+    the fix for the common case; this is the safety net for the rest, and a
+    safety net is warranted because the failure is visible to the recipient.
+
+    **The order is the security property.** Each paragraph is escaped *first*,
+    which neutralises any HTML in scraped article text, and only then are our
+    own tags inserted into the escaped string. Converting before escaping — or
+    marking raw model output safe — would reopen exactly the injection hole
+    :class:`~jinja2.sandbox.SandboxedEnvironment` and autoescape exist to close.
     """
-    return [chunk.strip() for chunk in re.split(r"\n\s*\n", body or "") if chunk.strip()]
+    chunks = [chunk.strip() for chunk in re.split(r"\n\s*\n", body or "") if chunk.strip()]
+    return [_render_paragraph(chunk) for chunk in chunks]
+
+
+def _render_paragraph(chunk: str) -> Markup:
+    """Escape one paragraph, then convert a whitelist of markdown to HTML."""
+    safe = str(escape(chunk))
+
+    # Headings and bullets first: both are line-anchored, and inline emphasis
+    # inside them is still picked up by the bold pass afterwards.
+    safe = _MD_HEADING.sub(r"<strong>\1</strong>", safe)
+    safe = _MD_BULLET.sub(r"&bull;&nbsp;\1", safe)
+    safe = _MD_BOLD.sub(r"<strong>\1</strong>", safe)
+    safe = _MD_BOLD_ALT.sub(r"<strong>\1</strong>", safe)
+
+    # A single newline inside a paragraph is meaningful — it is what separates a
+    # heading line from the copy beneath it. HTML collapses it, so the two would
+    # run together on one line.
+    safe = safe.replace("\n", "<br />")
+    return Markup(safe)  # noqa: S704 - every insertion above is ours, post-escape
+
+
+def strip_markdown(value: str) -> str:
+    """Remove markdown markers for the plain-text part.
+
+    The text alternative has no bold, so ``**Dell**`` must become ``Dell`` and
+    not ``**Dell**``. Bullets keep a marker, because a list that reads as running
+    prose is worse than one with dashes.
+    """
+    value = _MD_HEADING.sub(r"\1", value)
+    value = _MD_BOLD.sub(r"\1", value)
+    value = _MD_BOLD_ALT.sub(r"\1", value)
+    return _MD_BULLET.sub(r"- \1", value)
 
 
 def apply_merge_tokens(value: str, recipient: Recipient | None) -> str:

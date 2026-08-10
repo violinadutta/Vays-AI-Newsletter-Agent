@@ -381,6 +381,26 @@ class RecipientValidation(BaseModel):
         return len(self.valid)
 
 
+class InlineImage(BaseModel):
+    """An image embedded in the message body and referenced by ``cid:``.
+
+    This is how a logo reaches the inbox without a public web server. The two
+    alternatives do not work: a filesystem path in ``src`` resolves to nothing in
+    a mail client, and a ``data:`` URI is stripped by both Gmail and Outlook.
+    A ``multipart/related`` part with a Content-ID is the one approach every
+    major client renders.
+    """
+
+    model_config = _STRICT
+
+    #: Matches the ``cid:`` reference in the HTML, without angle brackets.
+    content_id: str
+    data: bytes
+    #: MIME subtype only — ``png``, ``jpeg``, ``gif``.
+    subtype: str = "png"
+    filename: str = "logo.png"
+
+
 class EmailMessage(BaseModel):
     model_config = _STRICT
 
@@ -391,6 +411,8 @@ class EmailMessage(BaseModel):
     text: str
     headers: dict[str, str] = Field(default_factory=dict)
     tags: list[str] = Field(default_factory=list)
+    #: Embedded images referenced from the HTML as ``cid:<content_id>``.
+    inline_images: list[InlineImage] = Field(default_factory=list)
 
 
 class SendResult(BaseModel):
