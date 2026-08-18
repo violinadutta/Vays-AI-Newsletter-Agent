@@ -36,26 +36,27 @@ log = get_logger(__name__)
 #: cookie list what the application is and that it has an admin area.
 COOKIE_NAME = "vays_session"
 
-#: Must be stable: the component is keyed by it, and a changing key would mount
-#: a fresh, empty cookie jar on every rerun.
-_MANAGER_KEY = "session_cookie_manager"
+#: Component keys. Each mount needs its own, and **none of these may ever be
+#: used as a plain ``st.session_state`` key**. ``CookieManager.__init__`` mounts
+#: a component under the key it is given, so writing to the same name by hand
+#: collides with Streamlit's own widget bookkeeping and raises
+#: ``StreamlitDuplicateElementKey`` — which, on the login page, stops the form
+#: working at all. That is exactly the bug this layout exists to prevent: a
+#: convenience feature must never be able to block signing in.
+_WRITE_KEY = "cookie_write"
+_CLEAR_KEY = "cookie_clear"
 
 
-def _manager() -> object:
-    """The cookie component, created once per browser session.
+def _cookie_writer(mount_key: str) -> object:
+    """A CookieManager mounted under ``mount_key``.
 
-    Held in ``session_state``, **not** ``@st.cache_resource``: the manager mounts
-    a frontend widget, and Streamlit refuses widget calls inside a cached
-    function. One instance per rerun would also be wrong — each mounts its own
-    component and they race to read the same cookie.
+    Constructed per call rather than cached. The instance cannot be held in
+    ``session_state`` (see the note above), and it is only ever needed at the
+    moment of a write, so there is nothing to reuse.
     """
     import extra_streamlit_components as stx
 
-    manager = st.session_state.get(_MANAGER_KEY)
-    if manager is None:
-        manager = stx.CookieManager(key=_MANAGER_KEY)
-        st.session_state[_MANAGER_KEY] = manager
-    return manager
+    return stx.CookieManager(key=mount_key)
 
 
 def remember(username: str, role: UserRole, token: str) -> None:
@@ -65,11 +66,11 @@ def remember(username: str, role: UserRole, token: str) -> None:
     log in because the cookie jar misbehaved is an outage.
     """
     try:
-        _manager().set(  # type: ignore[attr-defined]
+        _cookie_writer(_WRITE_KEY).set(  # type: ignore[attr-defined]
             COOKIE_NAME,
             token,
             expires_at=datetime.now(UTC) + timedelta(seconds=SESSION_TTL_SECONDS),
-            key=f"{_MANAGER_KEY}_set",
+            key=f"{_WRITE_KEY}_set",
         )
         log.info("session.remembered", username=username, role=str(role))
     except Exception:  # noqa: BLE001 - persistence is best-effort
@@ -83,23 +84,24 @@ def forget() -> None:
     all — the next visitor to that browser would be signed in as the last user.
     """
     try:
-        _manager().delete(COOKIE_NAME, key=f"{_MANAGER_KEY}_del")  # type: ignore[attr-defined]
+        _cookie_writer(_CLEAR_KEY).delete(  # type: ignore[attr-defined]
+            COOKIE_NAME, key=f"{_CLEAR_KEY}_del"
+        )
     except Exception:  # noqa: BLE001 - the cookie may simply not be there
         log.debug("session.forget_noop")
 
 
 def stored_token() -> str | None:
-    """The raw token from the browser, if any. Unverified."""
+    """The raw token from the browser, if any. Unverified.
+
+    Reads ``st.context.cookies`` and **mounts no component**. Reading is the one
+    thing that happens on every page load, including the login page, so it is
+    deliberately the path with no frontend element in it — a read cannot collide
+    with anything, and cannot fail in a way that hides the login form.
+    """
     try:
-        # Read from st.context first: it is available on the very first run,
-        # whereas the component needs a round trip before its jar is populated.
-        # Without this the user sees one flash of the login screen on every
-        # refresh, which reads exactly like the bug this module exists to fix.
         cookies = getattr(st.context, "cookies", None) or {}
-        direct = cookies.get(COOKIE_NAME)
-        if direct:
-            return str(direct)
-        value = _manager().get(COOKIE_NAME)  # type: ignore[attr-defined]
+        value = cookies.get(COOKIE_NAME)
     except Exception:  # noqa: BLE001 - no cookie is the normal case
         return None
     return str(value) if value else None

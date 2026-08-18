@@ -447,8 +447,8 @@ from services.generation_service import GenerationService
 from services.delivery_service import DeliveryService
 from services.agent_service import AgentService
 
-draft = GenerationService().generate(request)     # runs the full two-stage pipeline
-AgentService().run()                              # one discovery cycle
+draft = GenerationService().generate(request)  # runs the full two-stage pipeline
+AgentService().run()  # one discovery cycle
 ```
 
 The only externally reachable URL is the **approval review page**, served by the Streamlit app:
