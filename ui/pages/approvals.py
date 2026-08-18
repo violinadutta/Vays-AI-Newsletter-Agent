@@ -21,7 +21,7 @@ from config import get_settings
 from core.enums import SENDING_ROLES, CampaignStatus
 from core.exceptions import NewsletterAppError
 from services.approval_service import TOKEN_PARAM, ApprovalService
-from ui import components, state
+from ui import components, nav, state
 
 
 def render() -> None:
@@ -128,7 +128,7 @@ def _campaign_card(
             if st.button("Edit", key=f"edit_{campaign_id}", width="stretch"):
                 # Reuses the existing editor rather than duplicating one here.
                 state.set_value(state.DRAFT_CAMPAIGN_ID, campaign_id)
-                st.switch_page("preview")
+                nav.goto("preview")
         with reject:
             if st.button("Reject", key=f"reject_{campaign_id}", width="stretch"):
                 _decide(service, campaign_id, user, approve=False)

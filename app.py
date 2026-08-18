@@ -230,62 +230,11 @@ def main() -> None:
 
     render_sidebar(settings)
 
-    from ui.pages import (
-        approvals,
-        dashboard,
-        generate,
-        history,
-        logs,
-        preview,
-        recipients,
-        settings_page,
-    )
+    # The page objects live in ui/nav.py so that a page can navigate to another
+    # page by name. st.switch_page needs the object, not the url_path.
+    from ui import nav
 
-    # `url_path` is explicit on every page. Streamlit otherwise infers the path
-    # from the callable's name, and all six pages expose `render()` — which
-    # collides into a single "/render" and raises StreamlitAPIException.
-    navigation = st.navigation(
-        [
-            st.Page(dashboard.render, title="Dashboard", icon=":material/dashboard:", default=True),
-            st.Page(
-                generate.render,
-                title="Generate Newsletter",
-                icon=":material/auto_awesome:",
-                url_path="generate",
-            ),
-            st.Page(
-                preview.render,
-                title="Campaign Preview",
-                icon=":material/preview:",
-                url_path="preview",
-            ),
-            st.Page(
-                approvals.render,
-                title="Approvals",
-                icon=":material/how_to_reg:",
-                url_path="approvals",
-            ),
-            st.Page(
-                recipients.render,
-                title="Recipients",
-                icon=":material/group:",
-                url_path="recipients",
-            ),
-            st.Page(
-                history.render,
-                title="Campaign History",
-                icon=":material/history:",
-                url_path="history",
-            ),
-            st.Page(
-                settings_page.render,
-                title="Settings",
-                icon=":material/settings:",
-                url_path="settings",
-            ),
-            st.Page(logs.render, title="Logs", icon=":material/receipt_long:", url_path="logs"),
-        ]
-    )
+    navigation = st.navigation(nav.build())
     navigation.run()
 
 

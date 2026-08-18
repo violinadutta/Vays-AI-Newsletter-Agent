@@ -12,7 +12,7 @@ import streamlit as st
 
 from core.enums import CampaignStatus
 from core.models import CampaignFilter
-from ui import components, state, styles
+from ui import components, nav, state, styles
 
 
 def render() -> None:
@@ -121,7 +121,7 @@ def _recent(recent: list) -> None:
                     # appeared to do nothing: the campaign id it sets is read by
                     # the Preview page, which was never navigated to.
                     state.set_value(state.DRAFT_CAMPAIGN_ID, campaign.id)
-                    st.switch_page("preview")
+                    nav.goto("preview")
 
 
 def _health() -> None:
