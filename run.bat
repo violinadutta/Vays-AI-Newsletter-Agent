@@ -72,10 +72,19 @@ if errorlevel 1 (
 )
 
 REM --- 5. go -----------------------------------------------------------------
+REM Port comes from .env so run.bat, the tunnel and the approval links cannot
+REM disagree about where the app is.
+set "APP_PORT=8501"
+if exist ".env" (
+    for /f "usebackq tokens=1,* delims==" %%A in (".env") do (
+        if /i "%%A"=="APP_PORT" set "APP_PORT=%%B"
+    )
+)
+
 echo.
-echo   Starting. The app opens at http://localhost:8501
+echo   Starting. The app opens at http://localhost:%APP_PORT%
 echo   Press Ctrl+C in this window to stop it.
 echo.
-.venv\Scripts\python.exe -m streamlit run app.py
+.venv\Scripts\python.exe -m streamlit run app.py --server.port=%APP_PORT%
 
 endlocal

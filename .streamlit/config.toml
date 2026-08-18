@@ -1,0 +1,32 @@
+# ═════════════════════════════════════════════════════════════════════════════
+#  LUNA palette
+#
+#    #A7EBF2  lightest cyan   accents, muted text
+#    #54ACBF  mid cyan        primary — buttons, links, focus rings
+#    #26658C  mid blue        borders, dividers
+#    #023859  dark blue       cards, sidebar, inputs
+#    #011C40  darkest navy    page background
+#
+#  Layout is untouched; this only recolours. Streamlit's own theme has to carry
+#  it — a stylesheet alone cannot reach widgets rendered inside the framework's
+#  shadow DOM, which is why the Sign in button used to come out red.
+# ═════════════════════════════════════════════════════════════════════════════
+[theme]
+base = "dark"
+
+primaryColor = "#54ACBF"
+backgroundColor = "#011C40"
+secondaryBackgroundColor = "#023859"
+
+# Not #A7EBF2 itself: at full saturation it tints every paragraph cyan and is
+# tiring over a page of body text. This is the same hue lifted towards white —
+# 13:1 against the background, comfortably past WCAG AA.
+textColor = "#E6F3F7"
+
+font = "sans serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

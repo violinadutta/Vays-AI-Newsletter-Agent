@@ -68,3 +68,18 @@ py3langid>=0.2,<1.0             # BSD-3
 # on first use. We call ONLY its extraction API and never `.nlp()`, so nothing
 # is downloaded at runtime. tests/unit/test_no_runtime_downloads.py asserts this
 # — it matters for offline development and for a clean handover install.
+
+# ── Agent automation (M10) ───────────────────────────────────────────────────
+APScheduler>=3.10,<4.0          # MIT   (in-process scheduler for the agent worker)
+# tzdata carries the IANA timezone database. Windows ships no system tz database,
+# so `zoneinfo.ZoneInfo("Asia/Kolkata")` raises there without it. It arrives
+# transitively via pandas today; declared explicitly because the agent's send-time
+# scheduling depends on it directly, and inheriting a dependency by luck is how a
+# handover install breaks on someone else's machine.
+tzdata>=2024.1                  # Apache-2.0
+
+# Cookie storage, so a browser refresh does not sign the user out. Storage only:
+# the session token it holds is signed and verified by core/auth.py, so this
+# package sits beside the security boundary rather than on it (cf. D-15, which
+# refused streamlit-authenticator because that would have owned authentication).
+extra-streamlit-components>=0.1.71,<0.2   # Apache-2.0

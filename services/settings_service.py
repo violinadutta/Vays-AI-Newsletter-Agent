@@ -220,6 +220,121 @@ EDITABLE: tuple[EditableSetting, ...] = (
         "int",
         "Content",
     ),  # noqa: E501
+    # ── Agent ────────────────────────────────────────────────────────────────
+    _s(
+        "agent",
+        "enabled",
+        "Automation enabled",
+        "When off, nothing is discovered and nothing is sent automatically. The "
+        "manual workflow is unaffected either way.",
+        "bool",
+        "Agent",
+    ),
+    _s("agent", "blog_url", "Blog to watch", "The site checked for new posts.", "text", "Agent"),
+    _s(
+        "agent",
+        "discovery_interval_hours",
+        "Check every (hours)",
+        "How often the worker looks for newly published posts.",
+        "int",
+        "Agent",
+    ),
+    _s(
+        "agent",
+        "max_in_flight",
+        "Newsletters at a time",
+        "How many may be waiting for approval or waiting to send at once. 1 means "
+        "the agent writes the next only after the previous has gone out — that is "
+        "what makes it one per month rather than one per check.",
+        "int",
+        "Agent",
+    ),
+    _s(
+        "agent",
+        "max_posts_per_run",
+        "Posts per run",
+        "Kept low because Groq's free tier is tight on tokens per minute, and one "
+        "article costs roughly 3,450 tokens end to end.",
+        "int",
+        "Agent",
+    ),
+    _s(
+        "agent",
+        "send_schedule",
+        "Send schedule",
+        "'monthly' sends on the chosen weekday each month. 'daily' sends every day "
+        "and is mainly useful for testing.",
+        "choice",
+        "Agent",
+    ),
+    _s(
+        "agent",
+        "send_weekday",
+        "Send weekday",
+        "Which day of the week the monthly send lands on.",
+        "choice",
+        "Agent",
+    ),
+    _s(
+        "agent",
+        "send_week_of_month",
+        "Which week",
+        "1st to 4th occurrence of that weekday. 5 means the last one, because most "
+        "months have no 5th.",
+        "int",
+        "Agent",
+    ),
+    _s(
+        "agent",
+        "send_time",
+        "Send time",
+        "24-hour clock, e.g. 11:00. Approved after the slot has passed, a campaign "
+        "waits for the next one.",
+        "text",
+        "Agent",
+    ),
+    _s("agent", "timezone", "Timezone", "IANA name, e.g. Asia/Kolkata.", "text", "Agent"),
+    _s(
+        "agent",
+        "approval_email",
+        "Approval goes to",
+        "Where the review request is sent. The agent refuses to run without it.",
+        "text",
+        "Agent",
+    ),
+    _s(
+        "agent",
+        "app_base_url",
+        "This app's address",
+        "Where approvers reach this app from their own machine. 'auto' uses the "
+        "running ngrok tunnel. localhost only works on this computer.",
+        "text",
+        "Agent",
+    ),
+    _s(
+        "agent",
+        "approval_token_ttl_hours",
+        "Approval link expires after (hours)",
+        "An unused link stops working after this. Expired means not sent.",
+        "int",
+        "Agent",
+    ),
+    _s(
+        "agent",
+        "recipients_dir",
+        "Recipient CSV folder",
+        "Scanned for the recipient list; the newest .csv file wins.",
+        "text",
+        "Agent",
+    ),
+    _s(
+        "agent",
+        "max_attempts",
+        "Retries per post",
+        "After this many failures a post is abandoned rather than retried forever.",
+        "int",
+        "Agent",
+    ),
     # ── Operations ───────────────────────────────────────────────────────────
     _s(
         "logging",
@@ -233,6 +348,11 @@ EDITABLE: tuple[EditableSetting, ...] = (
 
 _SECTION_TYPES: dict[str, type[BaseSettings]] = dict(SECTIONS)
 _BY_KEY: dict[str, EditableSetting] = {item.key: item for item in EDITABLE}
+
+#: Keys the agent worker writes to the settings table that are state, not
+#: configuration. Deliberately outside the editable registry so they never
+#: appear on the Settings page as though someone could type them in.
+_RUNTIME_PREFIX = "agent.runtime."
 
 
 def _choices(item: EditableSetting) -> tuple[str, ...] | None:
@@ -461,7 +581,13 @@ class SettingsService:
         for key, value in saved.items():
             spec = _BY_KEY.get(key)
             if spec is None:
-                log.warning("settings.unknown_key_ignored", key=key)
+                # `agent.runtime.*` are heartbeats the worker writes to this same
+                # table. They are not settings and were never meant to be in the
+                # registry, so warning about them on every startup would train
+                # the reader to ignore the message that matters — a genuinely
+                # unknown key, which usually means a renamed setting.
+                if not key.startswith(_RUNTIME_PREFIX):
+                    log.warning("settings.unknown_key_ignored", key=key)
                 continue
             try:
                 setattr(getattr(settings, spec.section), spec.field, value)

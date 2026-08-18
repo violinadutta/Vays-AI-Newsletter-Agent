@@ -93,3 +93,17 @@ def logout() -> None:
     """
     for key in _SESSION_KEYS:
         st.session_state.pop(key, None)
+
+
+@st.cache_resource(show_spinner=False)
+def health_service() -> object:
+    """The shared health checker.
+
+    ``HealthService`` caches results for 30 seconds **on the instance**. A new
+    instance per rerun therefore caches nothing, and Streamlit reruns on every
+    interaction — so the sidebar alone would probe Groq on each click. One
+    shared object makes the cache real.
+    """
+    from services.health_service import HealthService
+
+    return HealthService()

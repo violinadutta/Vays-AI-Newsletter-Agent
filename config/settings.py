@@ -20,9 +20,13 @@ This keeps environment variable names flat and readable (``LLM_BASE_URL``, not
 
 from __future__ import annotations
 
+import calendar
+import re
+from datetime import date, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import (
     AliasChoices,
@@ -47,6 +51,45 @@ from core.exceptions import ConfigurationError
 # generation call would fail with a 400 from the API. With it, assignment runs
 # the same validators and field constraints as startup, and a rejected value
 # leaves the previous one in place.
+#: ``H:MM`` or ``HH:MM``, 00:00-23:59. Anchored via fullmatch at the call site.
+_CLOCK_TIME = re.compile(r"([01]?\d|2[0-3]):([0-5]\d)")
+
+#: Monday=0 … Sunday=6, matching ``date.weekday()``.
+_WEEKDAYS: dict[str, int] = {
+    "monday": 0,
+    "tuesday": 1,
+    "wednesday": 2,
+    "thursday": 3,
+    "friday": 4,
+    "saturday": 5,
+    "sunday": 6,
+}
+
+
+def _add_months(year: int, month: int, offset: int) -> tuple[int, int]:
+    """Advance a year/month pair, rolling the year over correctly."""
+    index = (year * 12 + (month - 1)) + offset
+    return index // 12, index % 12 + 1
+
+
+def _nth_weekday_of_month(year: int, month: int, weekday: int, nth: int) -> int:
+    """Day-of-month of the ``nth`` ``weekday``, clamped to the last occurrence.
+
+    Most months have only four of any given weekday. Asking for the 5th and
+    getting nothing would silently skip those months — a newsletter that fails
+    to arrive with no error anywhere — so ``5`` is read as "last", which is what
+    people mean by it anyway.
+    """
+    first_weekday = date(year, month, 1).weekday()
+    first_occurrence = 1 + (weekday - first_weekday) % 7
+    day = first_occurrence + (nth - 1) * 7
+
+    days_in_month = calendar.monthrange(year, month)[1]
+    while day > days_in_month:
+        day -= 7
+    return day
+
+
 _BASE = SettingsConfigDict(
     env_file=ENV_FILE,
     env_file_encoding="utf-8",
@@ -65,6 +108,12 @@ class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(**_BASE, env_prefix="APP_")
 
     env: Literal["local", "dev", "staging", "prod"] = "dev"
+
+    #: The port the dashboard serves on. Read by ``run.bat``, by the tunnel
+    #: script, and by the localhost fallback for approval links — a number
+    #: repeated in several places is one somebody changes in three of them.
+    port: int = Field(8501, ge=1, le=65535)
+
     secret_key: SecretStr = Field(
         ...,
         description=(
@@ -238,6 +287,7 @@ class Settings(BaseModel):
     """
 
     app: AppSettings
+    agent: AgentSettings
     logging: LoggingSettings
     llm: LLMSettings
     email: EmailSettings
@@ -255,8 +305,219 @@ class Settings(BaseModel):
         return self.app.env == "prod"
 
 
+class AgentSettings(BaseSettings):
+    """The automation agent: discovery, approval, and when campaigns go out.
+
+    **Ships disabled.** ``enabled=False`` means a fresh clone runs exactly as it
+    did before — the agent is opt-in, and nothing sends autonomously until
+    someone deliberately turns it on and supplies an approval address.
+    """
+
+    model_config = SettingsConfigDict(**_BASE, env_prefix="AGENT_")
+
+    enabled: bool = False
+
+    #: The site to watch. WordPress REST API first, RSS feed as fallback.
+    blog_url: str = "https://vaysinfotech.com"
+    discovery_interval_hours: int = Field(6, ge=1, le=168)
+
+    #: Posts pulled into the pipeline per run. Deliberately small: the binding
+    #: constraint is Groq's free-tier token ceiling (~8-12k/minute), and one
+    #: article costs ~3,450 tokens end to end.
+    max_posts_per_run: int = Field(1, ge=1, le=20)
+
+    #: **How many newsletters may be waiting at once** — the setting that makes
+    #: "one per month" actually mean one.
+    #:
+    #: A per-run cap alone does not: discovery runs every few hours, so a cap of
+    #: one would still draft one *per run* and queue thirty in a month, all of
+    #: which then send together on the same day. That is precisely what happened
+    #: on the first live run.
+    #:
+    #: So drafting is gated on how many campaigns are already awaiting approval
+    #: or approved-and-unsent. At 1, the agent writes the next newsletter only
+    #: once the previous one has gone out. Discovery keeps running regardless —
+    #: newly published posts are still recorded, they just wait their turn.
+    max_in_flight: int = Field(1, ge=1, le=50)
+
+    #: Attempts before a post is abandoned. A site that permanently blocks
+    #: extraction must stop consuming a slot on every run forever.
+    max_attempts: int = Field(3, ge=1, le=10)
+
+    #: Daily clock time for approved campaigns, ``HH:MM`` in ``timezone``.
+    send_time: str = "11:00"
+
+    #: ``monthly`` sends on the Nth given weekday of each month — the newsletter
+    #: cadence Vays actually runs. ``daily`` sends at ``send_time`` every day,
+    #: kept because it is the obvious thing to want during testing and costs one
+    #: branch to support.
+    send_schedule: Literal["monthly", "daily"] = "monthly"
+
+    #: Which weekday, and which occurrence of it. Together with ``send_time``
+    #: these read as "the 3rd Wednesday of the month at 11:00".
+    send_weekday: Literal[
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
+    ] = "wednesday"
+    #: 1st through 4th, or 5th meaning **last** — most months have no 5th
+    #: Wednesday, and silently skipping those months would be a scheduling bug
+    #: nobody notices until a newsletter does not arrive.
+    send_week_of_month: int = Field(3, ge=1, le=5)
+
+    #: IANA name. Windows ships no system timezone database, which is why
+    #: ``tzdata`` is a declared dependency.
+    timezone: str = "Asia/Kolkata"
+
+    #: Where the approval request goes. The agent refuses to run without it —
+    #: generating drafts nobody is asked to approve would silently pile up work.
+    approval_email: str = ""
+    approval_token_ttl_hours: int = Field(72, ge=1, le=720)
+
+    #: Where this application is reachable *from the approver's machine*.
+    #:
+    #: ``auto`` asks the locally running ngrok agent for its current public URL
+    #: each time an approval email is composed — which is what makes a rotating
+    #: free-tier tunnel survivable.
+    #:
+    #: **This is the production switch.** Point it at the real hostname once the
+    #: app is hosted and nothing else changes: no code, no redeploy, and links
+    #: already in flight keep resolving because the value is read per email.
+    #:
+    #: Empty means "use localhost on the configured port" — correct on this
+    #: machine, unusable from anywhere else, which is why it is not the thing to
+    #: leave set once anyone else has to approve.
+    app_base_url: str = "auto"
+
+    #: Directory scanned for the recipient CSV; the newest file wins.
+    recipients_dir: str = "data/recipients"
+
+    @field_validator("send_time")
+    @classmethod
+    def _valid_clock_time(cls, value: str) -> str:
+        """Accept ``H:MM`` or ``HH:MM``, and store the zero-padded form.
+
+        A regex rather than ``time.fromisoformat``, which is wrong in both
+        directions for a settings box someone types into: it rejects ``9:00``,
+        which is a perfectly reasonable thing to write, and silently accepts
+        ``24:00`` as midnight — turning "send at the end of the day" into "send
+        at the start of it".
+
+        Rejected at configuration time rather than at 09:00 on the morning a
+        campaign was due. A malformed send time discovered by the scheduler is
+        discovered by nobody, because nobody is watching when it fires.
+        """
+        cleaned = value.strip()
+        match = _CLOCK_TIME.fullmatch(cleaned)
+        if match is None:
+            msg = f"must be a 24-hour clock time between 00:00 and 23:59 (got {value!r})"
+            raise ValueError(msg)
+        return f"{int(match.group(1)):02d}:{match.group(2)}"
+
+    @field_validator("timezone")
+    @classmethod
+    def _known_timezone(cls, value: str) -> str:
+        cleaned = value.strip()
+        try:
+            ZoneInfo(cleaned)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            msg = (
+                f"{value!r} is not a known IANA timezone (e.g. Asia/Kolkata, UTC). "
+                "On Windows this also requires the tzdata package."
+            )
+            raise ValueError(msg) from exc
+        return cleaned
+
+    @field_validator("blog_url")
+    @classmethod
+    def _normalise_blog_url(cls, value: str) -> str:
+        cleaned = value.strip().rstrip("/")
+        if not cleaned.startswith(("http://", "https://")):
+            msg = f"must start with http:// or https:// (got {value!r})"
+            raise ValueError(msg)
+        return cleaned
+
+    @field_validator("app_base_url")
+    @classmethod
+    def _normalise_app_url(cls, value: str) -> str:
+        """As above, but ``auto`` is also allowed — it is resolved at send time."""
+        cleaned = value.strip().rstrip("/")
+        if cleaned.lower() == "auto":
+            return "auto"
+        if not cleaned.startswith(("http://", "https://")):
+            msg = f"must be a URL starting with http:// or https://, or 'auto' (got {value!r})"
+            raise ValueError(msg)
+        return cleaned
+
+    @property
+    def zone(self) -> ZoneInfo:
+        return ZoneInfo(self.timezone)
+
+    @property
+    def clock(self) -> tuple[int, int]:
+        """``send_time`` as (hour, minute)."""
+        hour, minute = self.send_time.split(":")
+        return int(hour), int(minute)
+
+    def next_send_after(self, now: datetime) -> datetime:
+        """The next moment a campaign approved at ``now`` may be sent.
+
+        The **next occurrence strictly after** ``now`` — never the same instant.
+        On the monthly schedule that means approving at 11:05 on the 3rd
+        Wednesday waits for next month, which is the conservative reading and
+        the one that cannot surprise a customer. In practice approval happens
+        days before the send date, so the case is rare.
+
+        Args:
+            now: Timezone-aware. A naive value is rejected rather than assumed
+                to be local: guessing produces an error that surfaces only as
+                mail sent at the wrong hour.
+        """
+        if now.tzinfo is None:
+            msg = "next_send_after requires a timezone-aware datetime"
+            raise ValueError(msg)
+
+        local = now.astimezone(self.zone)
+        hour, minute = self.clock
+
+        if self.send_schedule == "daily":
+            slot = local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            return slot if slot > local else slot + timedelta(days=1)
+
+        # Monthly: this month's occurrence if it is still ahead, otherwise next
+        # month's. Two candidates are enough — an occurrence always exists in
+        # every month, because the 5th is clamped to the last one.
+        for offset in (0, 1):
+            year, month = _add_months(local.year, local.month, offset)
+            day = _nth_weekday_of_month(
+                year, month, _WEEKDAYS[self.send_weekday], self.send_week_of_month
+            )
+            slot = datetime(year, month, day, hour, minute, tzinfo=self.zone)
+            if slot > local:
+                return slot
+
+        # Unreachable: next month's occurrence is always after any instant in
+        # this one. Kept as a guard rather than an assertion so a future edit to
+        # the loop above cannot silently return None.
+        msg = "could not compute the next send window"
+        raise ValueError(msg)
+
+    def describe_schedule(self) -> str:
+        """The schedule in words, for the dashboard and the approval email."""
+        if self.send_schedule == "daily":
+            return f"every day at {self.send_time} ({self.timezone})"
+        ordinal = {1: "1st", 2: "2nd", 3: "3rd", 4: "4th", 5: "last"}[self.send_week_of_month]
+        return (
+            f"the {ordinal} {self.send_weekday.capitalize()} of each month "
+            f"at {self.send_time} ({self.timezone})"
+        )
+
+    def is_send_window_open(self, now: datetime, approved_at: datetime) -> bool:
+        """Whether a campaign approved at ``approved_at`` may go out at ``now``."""
+        return now.astimezone(self.zone) >= self.next_send_after(approved_at)
+
+
 SECTIONS: tuple[tuple[str, type[BaseSettings]], ...] = (
     ("app", AppSettings),
+    ("agent", AgentSettings),
     ("logging", LoggingSettings),
     ("llm", LLMSettings),
     ("email", EmailSettings),

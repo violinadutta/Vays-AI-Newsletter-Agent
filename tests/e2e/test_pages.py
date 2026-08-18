@@ -334,3 +334,97 @@ class TestGenerate:
         generate_buttons = [b for b in app.button if "Generate newsletter" in str(b.label)]
         assert generate_buttons
         assert all(b.disabled for b in generate_buttons)
+
+
+class TestApprovals:
+    """The page a reviewer reaches from an emailed link."""
+
+    def _pending_campaign(self) -> int:
+        from core.enums import CampaignStatus
+        from modules.repository.campaign_repo import CampaignRepository
+        from modules.repository.database import unit_of_work
+
+        campaign_id = seed_campaign()
+        with unit_of_work() as session:
+            CampaignRepository(session).transition_or_raise(
+                campaign_id, CampaignStatus.AWAITING_APPROVAL
+            )
+        return campaign_id
+
+    def test_it_renders_with_nothing_pending(self) -> None:
+        app = run_page("approvals", **{"auth.user": admin()})
+
+        assert not app.exception
+        body = " ".join(str(m.value) for m in app.markdown)
+        assert "Nothing is waiting" in body
+
+    def test_a_pending_campaign_offers_the_three_actions(self) -> None:
+        self._pending_campaign()
+
+        app = run_page("approvals", **{"auth.user": admin()})
+
+        labels = {str(b.label) for b in app.button}
+        assert {"Approve", "Reject", "Edit"} <= labels
+
+    def test_the_fact_check_warning_is_shown_before_approving(self) -> None:
+        """Deliberate friction: the reviewer is the control against a
+        hallucinated product name reaching a customer."""
+        self._pending_campaign()
+
+        app = run_page("approvals", **{"auth.user": admin()})
+
+        assert "Verify every product name" in " ".join(str(w.value) for w in app.warning)
+
+    def test_an_editor_sees_no_decision_buttons(self) -> None:
+        """Holding the link is not permission. Authorisation is the role."""
+        from core.enums import UserRole
+        from services.auth_service import AuthenticatedUser
+
+        self._pending_campaign()
+        editor = AuthenticatedUser(
+            username="ed", display_name="Ed", role=UserRole.EDITOR, token="t"
+        )
+
+        app = run_page("approvals", **{"auth.user": editor})
+
+        labels = {str(b.label) for b in app.button}
+        assert "Approve" not in labels
+        assert "approver or admin" in " ".join(str(i.value) for i in app.info)
+
+    def test_an_invalid_token_is_reported_and_does_not_crash(self) -> None:
+        app = run_page("approvals", **{"auth.user": admin()})
+
+        assert not app.exception
+
+
+class TestRecipients:
+    """The standing mailing list, managed from the dashboard."""
+
+    def test_it_renders_empty_with_a_next_step(self) -> None:
+        app = run_page("recipients", **{"auth.user": admin()})
+
+        assert not app.exception
+        body = " ".join(str(m.value) for m in app.markdown)
+        assert "No recipients yet" in body
+
+    def test_it_offers_add_import_and_manage(self) -> None:
+        app = run_page("recipients", **{"auth.user": admin()})
+
+        labels = {str(i.label) for i in app.text_input}
+        assert "Email address" in labels
+        assert any("Add" in str(b.label) for b in app.button)
+
+    def test_it_says_uploads_append_rather_than_replace(self) -> None:
+        """The reassurance that matters: a second upload will not wipe the list."""
+        app = run_page("recipients", **{"auth.user": admin()})
+
+        assert "never replaces" in " ".join(str(i.value) for i in app.info)
+
+    def test_an_existing_list_is_shown(self) -> None:
+        from services.subscriber_service import SubscriberService
+
+        SubscriberService().import_csv(b"email,name\npriya@example.com,Priya\n")
+
+        app = run_page("recipients", **{"auth.user": admin()})
+
+        assert "1 active" in " ".join(str(m.value) for m in app.markdown)

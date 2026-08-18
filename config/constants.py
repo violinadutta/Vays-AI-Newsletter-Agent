@@ -30,6 +30,11 @@ OUTBOX_DIR: Final[Path] = DATA_DIR / "outbox"  # console email provider writes .
 PROMPTS_DIR: Final[Path] = PROJECT_ROOT / "prompts"
 TEMPLATES_DIR: Final[Path] = PROJECT_ROOT / "templates"
 EMAIL_TEMPLATES_DIR: Final[Path] = TEMPLATES_DIR / "email"
+#: Operational mail (approval requests). Deliberately NOT under email/, which is
+#: scanned by `TemplateRenderer.list_templates()` to build the newsletter layout
+#: picker — an internal template offered there would be selectable as a campaign
+#: layout and would fail to render, because it needs entirely different context.
+INTERNAL_TEMPLATES_DIR: Final[Path] = TEMPLATES_DIR / "internal"
 ASSETS_DIR: Final[Path] = PROJECT_ROOT / "assets"
 
 LOG_FILE: Final[Path] = LOGS_DIR / "app.jsonl"

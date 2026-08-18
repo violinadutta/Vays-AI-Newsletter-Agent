@@ -28,7 +28,7 @@ from services.settings_service import SettingsService, SettingView, bounds
 from ui import components, state
 
 #: Groups rendered as tabs, in this order. Sourced from the registry's `group`.
-GROUP_ORDER = ("AI", "Email", "Brand", "Content", "Operations")
+GROUP_ORDER = ("AI", "Email", "Brand", "Content", "Agent", "Operations")
 
 
 def render() -> None:

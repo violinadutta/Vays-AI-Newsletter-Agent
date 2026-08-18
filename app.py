@@ -19,6 +19,7 @@ import streamlit as st
 from config import configure_logging, get_logger, get_settings
 from core.exceptions import ConfigurationError, NewsletterAppError
 from services.auth_service import AuthService
+from ui import session as session_store
 from ui import state, styles
 
 st.set_page_config(
@@ -125,7 +126,9 @@ def render_login(auth: AuthService) -> None:
                 state.set_value(state.LOGIN_ERROR, "Enter both your username and password.")
             else:
                 try:
-                    state.set_current_user(auth.authenticate(username, password))
+                    user = auth.authenticate(username, password)
+                    state.set_current_user(user)
+                    session_store.remember(user.username, user.role, user.token)
                     state.clear(state.LOGIN_ERROR)
                     st.rerun()
                 except NewsletterAppError as exc:
@@ -148,20 +151,24 @@ def render_sidebar(settings: object) -> None:
     assert user is not None  # noqa: S101 - render_sidebar is only reached authenticated
 
     with st.sidebar:
-        st.markdown("### Vays Newsletter")
-        st.divider()
-
-        # Health probes land in M3/M6; until then the indicators report what is
-        # configured, which is still the answer to "why isn't generation working?"
+        # Real probes, shared with the Dashboard panel through one cached
+        # service. Until now this reported `provider == "mock"` as "online" — a
+        # placeholder from before the health checks existed, which meant a
+        # perfectly working Groq setup showed "offline" in the sidebar while the
+        # Dashboard showed "online" two inches away.
         llm_provider = settings.llm.provider  # type: ignore[attr-defined]
         email_provider = settings.email.provider  # type: ignore[attr-defined]
+        try:
+            health = state.health_service().check()  # type: ignore[attr-defined]
+            llm_ok, email_ok = health.llm.healthy, health.email.healthy
+        except Exception:  # noqa: BLE001 - a status dot must never break the shell
+            llm_ok = email_ok = False
+
         st.markdown(
-            styles.health_dot(llm_provider == "mock", f"AI service ({llm_provider})"),
-            unsafe_allow_html=True,
+            styles.health_dot(llm_ok, f"AI service ({llm_provider})"), unsafe_allow_html=True
         )
         st.markdown(
-            styles.health_dot(True, f"Email ({email_provider})"),
-            unsafe_allow_html=True,
+            styles.health_dot(email_ok, f"Email ({email_provider})"), unsafe_allow_html=True
         )
         st.divider()
 
@@ -169,8 +176,26 @@ def render_sidebar(settings: object) -> None:
         st.markdown(f'<span class="muted">{user.role.value}</span>', unsafe_allow_html=True)
         if st.button("Sign out", width="stretch"):
             get_logger(__name__).info("auth.logout", username=user.username)
+            session_store.forget()
             state.logout()
             st.rerun()
+
+
+def render_logo() -> None:
+    """Brand mark in the top-left, above the navigation.
+
+    ``st.logo`` rather than an image inside the sidebar: it pins the mark to the
+    corner and keeps it there across every page, which is what a logo is for.
+
+    The dark-UI variant is used when one exists. The original wordmark is
+    near-black and would be invisible on the navy sidebar — the same trap the
+    email header hit. A missing file falls back to the original, and a missing
+    original is skipped entirely: branding must never be what stops the app
+    rendering.
+    """
+    logo = styles.dashboard_logo()
+    if logo is not None:
+        st.logo(str(logo), size="large", link=get_settings().brand.website or None)
 
 
 def main() -> None:
@@ -178,11 +203,26 @@ def main() -> None:
 
     context = bootstrap()
     if not context.get("ok"):
+        # Deliberately no logo here. It reads the brand settings, and the reason
+        # this branch was taken may be that settings are unreadable — a config
+        # problem must produce the setup page, not a traceback from the banner
+        # above it.
         render_startup_error(context.get("error"))
         return
 
     auth: AuthService = context["auth"]  # type: ignore[assignment]
     settings = context["settings"]
+
+    # Before the auth gate, so the login screen carries the brand too.
+    render_logo()
+
+    # A browser refresh starts a new Streamlit session, so `session_state` is
+    # empty even though the person never signed out. Rebuild from the cookie
+    # before concluding they are anonymous.
+    if not state.is_authenticated():
+        restored = session_store.restore()
+        if restored is not None:
+            state.set_current_user(restored)  # type: ignore[arg-type]
 
     if not state.is_authenticated():
         render_login(auth)
@@ -190,7 +230,16 @@ def main() -> None:
 
     render_sidebar(settings)
 
-    from ui.pages import dashboard, generate, history, logs, preview, settings_page
+    from ui.pages import (
+        approvals,
+        dashboard,
+        generate,
+        history,
+        logs,
+        preview,
+        recipients,
+        settings_page,
+    )
 
     # `url_path` is explicit on every page. Streamlit otherwise infers the path
     # from the callable's name, and all six pages expose `render()` — which
@@ -209,6 +258,18 @@ def main() -> None:
                 title="Campaign Preview",
                 icon=":material/preview:",
                 url_path="preview",
+            ),
+            st.Page(
+                approvals.render,
+                title="Approvals",
+                icon=":material/how_to_reg:",
+                url_path="approvals",
+            ),
+            st.Page(
+                recipients.render,
+                title="Recipients",
+                icon=":material/group:",
+                url_path="recipients",
             ),
             st.Page(
                 history.render,

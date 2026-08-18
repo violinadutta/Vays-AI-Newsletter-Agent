@@ -17,6 +17,9 @@ __all__ = [
     "EditableField",
     "ExtractorTier",
     "LengthPreset",
+    "PENDING_APPROVAL_STATES",
+    "PostState",
+    "RETRYABLE_POST_STATES",
     "SendStatus",
     "SuppressionReason",
     "Tone",
@@ -37,6 +40,16 @@ class CampaignStatus(StrEnum):
 
     DRAFT = "DRAFT"
     READY = "READY"
+    #: Agent-generated drafts wait here for a human decision. Deliberately **not**
+    #: in ``SENDABLE_STATES`` — the existing guarded UPDATE therefore refuses to
+    #: send one, so "unapproved campaigns cannot be sent" is enforced by the same
+    #: mechanism that already prevents double-sends, rather than by a new check
+    #: someone could forget to call.
+    AWAITING_APPROVAL = "AWAITING_APPROVAL"
+    APPROVED = "APPROVED"
+    #: Terminal for the agent. A rejected campaign is never sent and never
+    #: re-offered; the source post is not reprocessed either.
+    REJECTED = "REJECTED"
     SENDING = "SENDING"
     SENT = "SENT"
     PARTIAL_FAILURE = "PARTIAL_FAILURE"
@@ -55,14 +68,37 @@ _TRANSITIONS: dict[CampaignStatus, frozenset[CampaignStatus]] = {
     # DRAFT -> SENDING is legal on purpose: the Send button lives on the Preview
     # screen, and forcing an explicit "mark as ready" click first would add a step
     # with no user value. READY means "validated and has recipients", not a
-    # mandatory gate. This set must stay identical to SENDABLE_STATES below —
-    # they are the same rule expressed twice, and a test asserts they agree.
+    # mandatory gate.
+    #
+    # Invariant: the states that can reach SENDING must be exactly
+    # SENDABLE_STATES (plus the two retry states). They are the same rule
+    # expressed twice, and a test asserts they agree — which is what stops an
+    # agent campaign becoming sendable here without also being sendable there.
     CampaignStatus.DRAFT: frozenset(
-        {CampaignStatus.READY, CampaignStatus.SENDING, CampaignStatus.ARCHIVED}
+        {
+            CampaignStatus.READY,
+            CampaignStatus.SENDING,
+            CampaignStatus.ARCHIVED,
+            # The agent submits its draft for a human decision instead of sending.
+            CampaignStatus.AWAITING_APPROVAL,
+        }
     ),
     CampaignStatus.READY: frozenset(
-        {CampaignStatus.DRAFT, CampaignStatus.SENDING, CampaignStatus.ARCHIVED}
+        {
+            CampaignStatus.DRAFT,
+            CampaignStatus.SENDING,
+            CampaignStatus.ARCHIVED,
+            CampaignStatus.AWAITING_APPROVAL,
+        }
     ),
+    # A pending campaign may be decided or abandoned — never sent directly.
+    CampaignStatus.AWAITING_APPROVAL: frozenset(
+        {CampaignStatus.APPROVED, CampaignStatus.REJECTED, CampaignStatus.ARCHIVED}
+    ),
+    # No route back to DRAFT: a campaign that can still be edited after approval
+    # is an approval that guarantees nothing. Edits happen while it is pending.
+    CampaignStatus.APPROVED: frozenset({CampaignStatus.SENDING, CampaignStatus.ARCHIVED}),
+    CampaignStatus.REJECTED: frozenset({CampaignStatus.ARCHIVED}),
     # No ARCHIVED here: a campaign that is mid-send must reach a settled state
     # first, or its send records would be orphaned by an archive action.
     CampaignStatus.SENDING: frozenset(
@@ -76,7 +112,18 @@ _TRANSITIONS: dict[CampaignStatus, frozenset[CampaignStatus]] = {
 }
 
 #: States from which a send may begin. Used by the repository's guarded UPDATE.
-SENDABLE_STATES: frozenset[CampaignStatus] = frozenset({CampaignStatus.DRAFT, CampaignStatus.READY})
+#:
+#: ``APPROVED`` is here and ``AWAITING_APPROVAL`` deliberately is not: that single
+#: distinction is what makes an unapproved agent campaign unsendable, using the
+#: conditional UPDATE that already exists rather than a separate check.
+SENDABLE_STATES: frozenset[CampaignStatus] = frozenset(
+    {CampaignStatus.DRAFT, CampaignStatus.READY, CampaignStatus.APPROVED}
+)
+
+#: Campaigns the agent produced and is waiting on a human for. Kept separate from
+#: ``SENDABLE_STATES`` so the dashboard can count them without re-deriving which
+#: states mean "a person still has to look at this".
+PENDING_APPROVAL_STATES: frozenset[CampaignStatus] = frozenset({CampaignStatus.AWAITING_APPROVAL})
 
 #: States whose content may still be edited.
 EDITABLE_STATES: frozenset[CampaignStatus] = frozenset({CampaignStatus.DRAFT, CampaignStatus.READY})
@@ -183,6 +230,33 @@ class EditableField(StrEnum):
 class ArticleStatus(StrEnum):
     EXTRACTED = "EXTRACTED"
     FAILED = "FAILED"
+
+
+class PostState(StrEnum):
+    """Where an automatically discovered blog post is in the agent pipeline.
+
+    This covers only the stretch **before** a campaign exists — discovery through
+    generation. Once ``campaign_id`` is set the campaign's own
+    :class:`CampaignStatus` governs, and duplicating those states here would
+    create two records of the same fact that could disagree.
+
+    ``SKIPPED`` is distinct from ``FAILED``: a post deliberately not processed
+    (too short, excluded category) must not be retried forever, whereas a
+    failure should be.
+    """
+
+    DISCOVERED = "DISCOVERED"
+    EXTRACTED = "EXTRACTED"
+    GENERATED = "GENERATED"
+    FAILED = "FAILED"
+    SKIPPED = "SKIPPED"
+
+
+#: States the agent will pick up and try to move forward. A post outside this
+#: set is either finished with, or deliberately parked.
+RETRYABLE_POST_STATES: frozenset[PostState] = frozenset(
+    {PostState.DISCOVERED, PostState.EXTRACTED, PostState.FAILED}
+)
 
 
 class ExtractorTier(StrEnum):

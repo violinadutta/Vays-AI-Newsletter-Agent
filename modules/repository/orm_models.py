@@ -40,6 +40,7 @@ from core.enums import (
     ArticleStatus,
     CampaignStatus,
     ExtractorTier,
+    PostState,
     SendStatus,
     SuppressionReason,
     UserRole,
@@ -150,6 +151,18 @@ class CampaignORM(Base):
         DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow
     )
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    #: When a human approved this campaign. **The send gate is computed from
+    #: this**, so it must be immutable once set — ``updated_at`` cannot serve the
+    #: purpose because it moves on every write, which would silently slide the
+    #: scheduled send forward every time anything touched the row.
+    #:
+    #: **Always written as UTC.** SQLite stores no timezone, so an aware value in
+    #: any other zone comes back as its wall-clock reading labelled UTC — 08:00
+    #: IST would return as 08:00 UTC, five and a half hours adrift, and the
+    #: campaign would go out on the wrong day. Convert before assigning.
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    approved_by: Mapped[str | None] = mapped_column(String(64))
 
     articles: Mapped[list[CampaignArticleORM]] = relationship(
         back_populates="campaign",
@@ -308,4 +321,140 @@ class UserORM(Base):
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_utcnow
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+class DiscoveredPostORM(Base):
+    """A blog post found by automatic discovery — the agent's memory.
+
+    **This table is what makes the agent idempotent.** Without it, every
+    scheduled run would re-process the same posts and mail customers about the
+    same article repeatedly. Every discovery run consults it before doing any
+    work, and nothing else in the pipeline is responsible for that check.
+
+    ``dedupe_key`` is the WordPress post ID where the source provides one, and
+    the normalised URL where it does not (a bare RSS feed). One column with a
+    unique constraint rather than two nullable ones, because "unique across
+    either of two columns" is not something a database can enforce — and an
+    unenforceable invariant is one that eventually breaks.
+    """
+
+    __tablename__ = "discovered_posts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    #: Stable identity. Unique — the constraint, not application logic, is what
+    #: guarantees a post is processed once even if two runs overlap.
+    dedupe_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    external_id: Mapped[str | None] = mapped_column(String(64))
+
+    url: Mapped[str] = mapped_column(String(2048), nullable=False)
+    title: Mapped[str] = mapped_column(String(512), nullable=False)
+    author: Mapped[str | None] = mapped_column(String(255))
+    categories: Mapped[list[str] | None] = mapped_column(JSON)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source: Mapped[str] = mapped_column(String(32), nullable=False, default="unknown")
+
+    state: Mapped[PostState] = mapped_column(
+        String(16), nullable=False, default=PostState.DISCOVERED, index=True
+    )
+    #: Bounded retries. A post whose site permanently blocks extraction must stop
+    #: being attempted every few hours forever.
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_error: Mapped[str | None] = mapped_column(Text)
+
+    #: Set once generation succeeds. From that point the campaign's own status
+    #: governs, and this row is only the provenance link back to the source post.
+    article_id: Mapped[int | None] = mapped_column(ForeignKey("articles.id", ondelete="SET NULL"))
+    campaign_id: Mapped[int | None] = mapped_column(
+        ForeignKey("campaigns.id", ondelete="SET NULL"), index=True
+    )
+
+    discovered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow, index=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+class ApprovalTokenORM(Base):
+    """A single-use, expiring capability to review one campaign.
+
+    **Only the hash is stored.** The token itself exists in exactly one place —
+    the link in the approval email — and is never written down here, for the same
+    reason passwords are not: a database read, a backup, or a screenshot of a
+    query must not yield a working credential.
+
+    The token does not by itself approve anything. It opens the review page,
+    which still requires a login and an approver role. It is a pointer with an
+    expiry, not an authorisation.
+    """
+
+    __tablename__ = "approval_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    #: sha256 of the raw token. Unique so a collision cannot silently grant
+    #: access to the wrong campaign.
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+
+    campaign_id: Mapped[int] = mapped_column(
+        ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    #: Set when a decision is recorded. Non-null means spent — a replayed link
+    #: is refused even before the expiry is checked.
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    used_by: Mapped[str | None] = mapped_column(String(64))
+    decision: Mapped[str | None] = mapped_column(String(16))
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+class SubscriberORM(Base):
+    """The master mailing list — who receives newsletters, standing.
+
+    **Distinct from ``recipients``, deliberately.** That table is a per-campaign
+    *snapshot*: "who received campaign 42" must stay true even after this list
+    changes. This one is the living list that snapshot is taken from. Merging
+    them would let history mutate every time someone is added or removed.
+
+    Also distinct from ``suppressions``: that is a legal do-not-send record and
+    outranks this list. Someone unsubscribed stays unsubscribed even if they are
+    active here, which is checked at send time by the existing validator.
+
+    ``email`` is the primary key, so an import cannot create a duplicate no
+    matter how many times the same CSV is uploaded. That is the append-safety
+    property the whole feature rests on.
+    """
+
+    __tablename__ = "subscribers"
+
+    email: Mapped[str] = mapped_column(String(254), primary_key=True)
+    name: Mapped[str | None] = mapped_column(String(255))
+    company: Mapped[str | None] = mapped_column(String(255))
+
+    #: Removing someone deactivates rather than deletes. A hard delete would let
+    #: the next CSV import silently resurrect them, which is exactly the mistake
+    #: the suppression list exists to prevent one level up.
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+
+    #: How they arrived — "csv:list.csv", "manual", "bootstrap". Answers "why is
+    #: this person on the list?" months later.
+    source: Mapped[str] = mapped_column(String(64), nullable=False, default="manual")
+    added_by: Mapped[str | None] = mapped_column(String(64))
+    notes: Mapped[str | None] = mapped_column(Text)
+
+    added_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow, index=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow
     )

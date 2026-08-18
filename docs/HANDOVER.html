@@ -1,0 +1,2052 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vays Newsletter Platform — Handover</title>
+<style>
+  :root{
+    --luna-lightest:#A7EBF2; --luna-cyan:#54ACBF; --luna-blue:#26658C;
+    --luna-dark:#023859;     --luna-darkest:#011C40;
+    --ink:#12212B; --ink-soft:#43606F; --muted:#6B8494;
+    --rule:#D6E4EB; --wash:#F3F9FB; --wash2:#E9F4F8;
+    --ok:#0E8F6F; --warn:#B67A10; --bad:#C43B47;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  body{
+    font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;
+    color:var(--ink); font-size:10.2pt; line-height:1.52; margin:0;
+  }
+  @page{ size:A4; margin:16mm 15mm 18mm 15mm; }
+  @page:first{ margin:0; }
+
+  h1,h2,h3,h4{ color:var(--luna-dark); line-height:1.25; margin:0 0 .4em; }
+  h1{ font-size:21pt; letter-spacing:-.4px; }
+  h2{
+    font-size:15pt; margin-top:0; padding:14px 0 8px;
+    border-bottom:2.5px solid var(--luna-cyan); break-before:page; break-after:avoid;
+  }
+  h2:first-of-type{ break-before:auto; }
+  h2 .num{ color:var(--luna-cyan); font-weight:800; margin-right:.5em; }
+  h3{ font-size:11.6pt; margin-top:1.5em; color:var(--luna-blue); break-after:avoid; }
+  h4{ font-size:10.2pt; margin-top:1.1em; color:var(--ink-soft); break-after:avoid;
+      text-transform:uppercase; letter-spacing:.6px; font-size:8.6pt; }
+  p{ margin:0 0 .7em; }
+  a{ color:var(--luna-blue); text-decoration:none; }
+  ul,ol{ margin:.2em 0 .8em; padding-left:1.15em; }
+  li{ margin-bottom:.28em; }
+  code,kbd{
+    font-family:"Cascadia Mono",Consolas,"Courier New",monospace; font-size:8.8pt;
+    background:var(--wash2); padding:1px 4px; border-radius:3px; color:var(--luna-dark);
+    word-break:break-word;
+  }
+  pre{
+    background:var(--luna-darkest); color:#DCEFF5; padding:11px 13px; border-radius:6px;
+    font-family:"Cascadia Mono",Consolas,monospace; font-size:8.3pt; line-height:1.5;
+    overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:.5em 0 .9em;
+    break-inside:avoid;
+  }
+  pre code{ background:none; color:inherit; padding:0; font-size:inherit; }
+  pre .c{ color:#7FA8B8; }  pre .k{ color:#A7EBF2; }
+
+  table{ width:100%; border-collapse:collapse; margin:.4em 0 1em; font-size:9pt; break-inside:auto; }
+  thead{ display:table-header-group; }
+  tr{ break-inside:avoid; }
+  th{ background:var(--luna-dark); color:#fff; text-align:left; padding:6px 8px;
+      font-weight:600; font-size:8.4pt; text-transform:uppercase; letter-spacing:.4px; }
+  td{ padding:5px 8px; border-bottom:1px solid var(--rule); vertical-align:top; }
+  tbody tr:nth-child(even){ background:var(--wash); }
+  td code{ background:transparent; padding:0; color:var(--luna-blue); font-weight:600; }
+
+  .cover{
+    height:297mm; background:linear-gradient(160deg,var(--luna-darkest) 0%,var(--luna-dark) 55%,var(--luna-blue) 100%);
+    color:#fff; padding:34mm 22mm; display:flex; flex-direction:column; break-after:page;
+  }
+  .cover .eyebrow{ color:var(--luna-lightest); letter-spacing:3.5px; text-transform:uppercase;
+                   font-size:9pt; font-weight:600; }
+  .cover h1{ color:#fff; font-size:34pt; line-height:1.1; margin:14px 0 0; letter-spacing:-1px; }
+  .cover .sub{ color:var(--luna-lightest); font-size:13pt; margin-top:12px; font-weight:300; }
+  .cover .rule{ width:88px; height:4px; background:var(--luna-cyan); margin:26px 0; border-radius:2px; }
+  .cover .meta{ margin-top:auto; font-size:9.6pt; color:#C9E7F0; }
+  .cover .meta b{ color:#fff; font-weight:600; }
+  .cover .meta div{ margin-bottom:5px; }
+  .cover .badges{ display:flex; gap:9px; margin-top:20px; flex-wrap:wrap; }
+  .cover .badge{ background:rgba(167,235,242,.16); border:1px solid rgba(167,235,242,.45);
+                 color:#fff; padding:5px 12px; border-radius:20px; font-size:8.6pt; }
+
+  .lede{ font-size:11pt; color:var(--ink-soft); border-left:3px solid var(--luna-cyan);
+         padding-left:12px; margin:0 0 1.1em; }
+  .note,.warn,.tip{ padding:9px 12px; border-radius:5px; margin:.6em 0 1em; font-size:9.3pt;
+                    break-inside:avoid; border-left:3.5px solid; }
+  .note{ background:var(--wash); border-color:var(--luna-cyan); }
+  .warn{ background:#FDF3F4; border-color:var(--bad); }
+  .tip{  background:#F2FAF6; border-color:var(--ok); }
+  .note b,.warn b,.tip b{ display:block; margin-bottom:2px; font-size:8.4pt;
+        text-transform:uppercase; letter-spacing:.7px; }
+  .note b{ color:var(--luna-blue); } .warn b{ color:var(--bad); } .tip b{ color:var(--ok); }
+
+  figure{ margin:1em 0 1.3em; break-inside:avoid; text-align:center; }
+  figure svg{ max-width:100%; height:auto; }
+  figcaption{ font-size:8.4pt; color:var(--muted); margin-top:7px; text-align:left;
+              border-top:1px solid var(--rule); padding-top:5px; }
+  figcaption b{ color:var(--ink-soft); }
+
+  .toc{ column-count:2; column-gap:26px; font-size:9.4pt; }
+  .toc div{ margin-bottom:4px; break-inside:avoid; }
+  .toc .n{ display:inline-block; width:22px; color:var(--luna-cyan); font-weight:700; }
+  .toc .s{ padding-left:22px; color:var(--muted); font-size:8.7pt; }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:.5em 0 1em; }
+  .card{ border:1px solid var(--rule); border-radius:6px; padding:10px 12px; background:var(--wash);
+         break-inside:avoid; }
+  .card h4{ margin-top:0; color:var(--luna-blue); }
+  .card p{ margin:0; font-size:9pt; }
+
+  .kv{ font-size:9pt; }
+  .kv td:first-child{ font-weight:600; color:var(--ink-soft); width:32%; }
+
+  .swap{ border:1px solid var(--rule); border-left:4px solid var(--luna-cyan); border-radius:5px;
+         padding:11px 13px; margin:.7em 0 1.2em; break-inside:avoid; }
+  .swap h3{ margin:0 0 .5em; font-size:11pt; }
+  .swap .why{ font-size:9.2pt; color:var(--ink-soft); margin-bottom:.6em; }
+  .swap .eff{ float:right; font-size:8pt; background:var(--luna-cyan); color:#fff;
+              padding:2px 9px; border-radius:11px; font-weight:600; letter-spacing:.3px; }
+
+  .fnlist{ font-size:8.9pt; }
+  .fnlist td:first-child{ white-space:nowrap; }
+  .sig{ font-family:"Cascadia Mono",Consolas,monospace; font-size:8.2pt; color:var(--luna-blue); }
+  .mod{ background:var(--luna-dark); color:#fff; padding:3px 9px; border-radius:4px;
+        font-family:"Cascadia Mono",Consolas,monospace; font-size:9pt; display:inline-block;
+        margin:1.3em 0 .35em; }
+  .modnote{ font-size:9pt; color:var(--ink-soft); margin:.1em 0 .5em; }
+
+  .pill{ display:inline-block; padding:1px 8px; border-radius:10px; font-size:7.8pt;
+         font-weight:700; letter-spacing:.3px; }
+  .p-ok{ background:#DEF3EC; color:var(--ok); }
+  .p-no{ background:#FBE7E9; color:var(--bad); }
+  .p-mid{ background:#FDF2DE; color:var(--warn); }
+
+  .nobreak{ break-inside:avoid; }
+  .pagebreak{ break-before:page; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="eyebrow">Vays Infotech &nbsp;·&nbsp; Internal Platform</div>
+  <h1>AI Newsletter<br>Generation &amp; Distribution<br>Platform</h1>
+  <div class="rule"></div>
+  <div class="sub">Complete technical handover — architecture, module reference,<br>
+       swap guide and operations runbook</div>
+  <div class="badges">
+    <span class="badge">Python 3.11–3.14</span>
+    <span class="badge">Streamlit</span>
+    <span class="badge">Groq · gpt-oss-120b</span>
+    <span class="badge">SQLite + Alembic</span>
+    <span class="badge">Zero local inference</span>
+  </div>
+  <div class="meta">
+    <div><b>Document</b> &nbsp; Handover Pack v1.0 — single source of truth</div>
+    <div><b>Covers</b> &nbsp; Milestones M0–M10 (manual pipeline + autonomous agent)</div>
+    <div><b>Scale</b> &nbsp; 94 source files · ~16,900 lines · 1,168 tests · 93% coverage</div>
+    <div><b>Owner</b> &nbsp; Sidhant — sidhant@deephorizon.io</div>
+    <div><b>Date</b> &nbsp; 18 August 2026</div>
+  </div>
+</div>
+
+<h2 style="break-before:auto;"><span class="num">§</span>Contents</h2>
+<div class="toc">
+  <div><span class="n">1</span>What this system does</div>
+  <div class="s">The problem, the pipeline, the two ways to run it</div>
+  <div><span class="n">2</span>Quick start on a fresh machine</div>
+  <div class="s">Ten minutes from clone to a working dashboard</div>
+  <div><span class="n">3</span>Architecture</div>
+  <div class="s">Layers, the import rule, the two processes</div>
+  <div><span class="n">4</span>How the system flows</div>
+  <div class="s">Six diagrams: manual, automated, approval, guards, states</div>
+  <div><span class="n">5</span>Timing — exactly what is calculated when</div>
+  <div class="s">Discovery cadence, the 3rd-Wednesday rule, the send gate</div>
+  <div><span class="n">6</span>Module reference</div>
+  <div class="s">Every package, module and public function</div>
+  <div><span class="n">7</span>Data model</div>
+  <div class="s">Twelve tables and what each is for</div>
+  <div><span class="n">8</span>Configuration</div>
+  <div class="s">The two layers, every variable, the secret rule</div>
+  <div><span class="n">9</span>Swapping things out</div>
+  <div class="s">LLM, email, template, blog source, database, host, auth</div>
+  <div><span class="n">10</span>Operations runbook</div>
+  <div class="s">Start, stop, monitor, and the failures you will actually hit</div>
+  <div><span class="n">11</span>Testing &amp; quality gates</div>
+  <div class="s">Six gates, how to run them, what each protects</div>
+  <div><span class="n">12</span>Security</div>
+  <div class="s">Secrets, tokens, sessions, and the send guards</div>
+  <div><span class="n">13</span>Decision register</div>
+  <div class="s">What was chosen, what was reversed, and why</div>
+  <div><span class="n">14</span>Known gaps &amp; next steps</div>
+  <div class="s">What is genuinely not done yet</div>
+</div>
+
+<h2 id="s1"><span class="num">1</span>What this system does</h2>
+
+<p class="lede">Marketing at Vays used to read partner blog posts by hand, summarise them,
+rewrite them into customer-facing copy, format the HTML, and send the result. This platform does
+that end to end — and can now do it unattended, once a month, with a human approving the send.</p>
+
+<h3>1.1 The pipeline</h3>
+<p>Everything the platform does is one pipeline. The manual and automated modes run
+<em>the same</em> pipeline; they differ only in who starts it and who clicks send.</p>
+
+<figure>
+<svg viewBox="0 0 760 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="10">
+  <defs>
+    <marker id="a1" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#26658C"/>
+    </marker>
+  </defs>
+  <g>
+    <rect x="4"   y="34" width="94" height="46" rx="7" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.4"/>
+    <text x="51"  y="52" text-anchor="middle" fill="#023859" font-weight="700">Discover</text>
+    <text x="51"  y="66" text-anchor="middle" fill="#43606F" font-size="8">blog → URLs</text>
+
+    <rect x="113" y="34" width="94" height="46" rx="7" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.4"/>
+    <text x="160" y="52" text-anchor="middle" fill="#023859" font-weight="700">Extract</text>
+    <text x="160" y="66" text-anchor="middle" fill="#43606F" font-size="8">3-tier scraper</text>
+
+    <rect x="222" y="34" width="94" height="46" rx="7" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.4"/>
+    <text x="269" y="52" text-anchor="middle" fill="#023859" font-weight="700">Clean</text>
+    <text x="269" y="66" text-anchor="middle" fill="#43606F" font-size="8">token budget</text>
+
+    <rect x="331" y="34" width="94" height="46" rx="7" fill="#023859" stroke="#023859"/>
+    <text x="378" y="52" text-anchor="middle" fill="#fff" font-weight="700">Generate</text>
+    <text x="378" y="66" text-anchor="middle" fill="#A7EBF2" font-size="8">LLM, 2 stages</text>
+
+    <rect x="440" y="34" width="94" height="46" rx="7" fill="#FDF2DE" stroke="#E0A22C" stroke-width="1.6"/>
+    <text x="487" y="52" text-anchor="middle" fill="#8A5E08" font-weight="700">Approve</text>
+    <text x="487" y="66" text-anchor="middle" fill="#8A5E08" font-size="8">human, always</text>
+
+    <rect x="549" y="34" width="94" height="46" rx="7" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.4"/>
+    <text x="596" y="52" text-anchor="middle" fill="#023859" font-weight="700">Render</text>
+    <text x="596" y="66" text-anchor="middle" fill="#43606F" font-size="8">HTML + text</text>
+
+    <rect x="658" y="34" width="94" height="46" rx="7" fill="#DEF3EC" stroke="#0E8F6F" stroke-width="1.6"/>
+    <text x="705" y="52" text-anchor="middle" fill="#0A6B53" font-weight="700">Send</text>
+    <text x="705" y="66" text-anchor="middle" fill="#0A6B53" font-size="8">batched</text>
+  </g>
+  <g stroke="#26658C" stroke-width="1.4" marker-end="url(#a1)">
+    <line x1="98" y1="57" x2="109" y2="57"/>   <line x1="207" y1="57" x2="218" y2="57"/>
+    <line x1="316" y1="57" x2="327" y2="57"/>  <line x1="425" y1="57" x2="436" y2="57"/>
+    <line x1="534" y1="57" x2="545" y2="57"/>  <line x1="643" y1="57" x2="654" y2="57"/>
+  </g>
+  <text x="487" y="24" text-anchor="middle" fill="#8A5E08" font-size="8.4" font-weight="700">
+    the one step that is never automated
+  </text>
+  <text x="378" y="102" text-anchor="middle" fill="#6B8494" font-size="8">
+    every arrow carries a Pydantic model — never a raw dict
+  </text>
+</svg>
+<figcaption><b>Figure 1 — The pipeline.</b> Seven stages. Human approval sits between generation
+and sending by design (D-5); it is the primary mitigation for the LLM inventing a fact about an
+OEM partner, and it is not removable by configuration.</figcaption>
+</figure>
+
+<h3>1.2 Two ways to run it</h3>
+<div class="grid2">
+  <div class="card">
+    <h4>Manual — the dashboard</h4>
+    <p>A person pastes blog URLs into <b>Generate Newsletter</b>, reviews and edits the
+    generated copy on <b>Campaign Preview</b>, then sends. Full control, used for one-off
+    or special campaigns. This is milestones M1–M9.</p>
+  </div>
+  <div class="card">
+    <h4>Automated — the agent</h4>
+    <p>A background worker checks the Vays blog on a schedule, generates a newsletter from any
+    new post, emails management a secure approval link, and sends to the whole list on the
+    3rd Wednesday of the month. This is M10.</p>
+  </div>
+</div>
+<p>Both write to the same database and appear in the same <b>Campaign History</b>. The automated
+mode is simply the manual mode with a scheduler and an email-based approval step in front of it.</p>
+
+<h3>1.3 The three constraints that shaped everything</h3>
+<table>
+<thead><tr><th style="width:24%">Constraint</th><th>What it means in the code</th></tr></thead>
+<tbody>
+<tr><td><b>Open-source LLM only</b></td>
+    <td>The <em>model</em> must be open-weight; the <em>host</em> need not be. Groq serves only
+    open-source models, so <code>openai/gpt-oss-120b</code> (Apache 2.0) satisfies this more
+    cleanly than self-hosting would. See D-2.</td></tr>
+<tr><td><b>Zero local inference</b></td>
+    <td>No model, weights, or inference runtime ever runs on the developer machine.
+    Machine-enforced: <code>scripts/check_no_local_inference.py</code> fails the build if
+    <code>torch</code>, <code>transformers</code>, <code>ollama</code>, <code>vllm</code> or
+    friends appear in any requirements file or import. It runs <em>first</em> in CI.</td></tr>
+<tr><td><b>Handover-ready</b></td>
+    <td>Another developer must clone, configure and run this on a different Windows PC from the
+    documentation alone. That is what this document is for.</td></tr>
+</tbody>
+</table>
+
+<h2 id="s2"><span class="num">2</span>Quick start on a fresh machine</h2>
+
+<p class="lede">Target: a working dashboard in about ten minutes, assuming Python is installed.</p>
+
+<h3>2.1 Prerequisites</h3>
+<table class="kv">
+<tbody>
+<tr><td>Python</td><td>3.11 – 3.14 (developed and verified on <b>3.14.3</b>, Windows 11 AMD64)</td></tr>
+<tr><td>OS</td><td>Windows 10/11 primary. The code is <code>pathlib</code>-based and CRLF-safe;
+    Linux works and is covered by CI, but <code>run.bat</code> is Windows-only.</td></tr>
+<tr><td>RAM</td><td>Any. All inference is remote — this runs on an 8 GB laptop with no GPU.</td></tr>
+<tr><td>Network</td><td>Outbound HTTPS to <code>api.groq.com</code>, the blog, and your mail provider.</td></tr>
+<tr><td>Not needed</td><td>Node.js, Docker, Redis, a GPU, or any paid service beyond a mail provider.</td></tr>
+</tbody>
+</table>
+
+<h3>2.2 The six commands</h3>
+<pre><span class="c"># 1 — get the code and a virtual environment</span>
+git clone &lt;repo-url&gt; vays-newsletter-ai
+cd vays-newsletter-ai
+py -3.12 -m venv .venv
+.venv\Scripts\activate
+
+<span class="c"># 2 — install exactly the versions that were tested</span>
+pip install -r requirements.lock.txt
+
+<span class="c"># 3 — configuration</span>
+copy .env.example .env
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+<span class="c">#    paste that into APP_SECRET_KEY=  in .env, then add GROQ_API_KEY=</span>
+
+<span class="c"># 4 — create the database (12 tables, 5 migrations)</span>
+alembic upgrade head
+
+<span class="c"># 5 — create the first login. No default password exists anywhere.</span>
+python -m scripts.create_user
+
+<span class="c"># 6 — run</span>
+run.bat            <span class="c"># → http://localhost:8501</span></pre>
+
+<div class="tip"><b>Use the lockfile</b>
+<code>requirements.lock.txt</code> pins all 132 packages for a byte-identical install.
+<code>requirements.txt</code> holds the loose ranges and is what you edit when adding a
+dependency; regenerate the lock with <code>pip freeze</code> afterwards.</div>
+
+<h3>2.3 What <code>run.bat</code> checks before it starts</h3>
+<p>A fresh machine fails in four predictable ways, so the launcher checks for each and names the
+fix rather than showing a stack trace:</p>
+<table>
+<thead><tr><th style="width:30%">Check</th><th>Why it exists</th></tr></thead>
+<tbody>
+<tr><td>Virtual environment exists</td><td>Otherwise <code>streamlit</code> resolves to a global install or nothing.</td></tr>
+<tr><td><code>.env</code> exists</td><td>Startup would fail on a <code>ConfigurationError</code> with no clue that a file is simply missing.</td></tr>
+<tr><td>Migrations applied</td><td>A schema behind <code>head</code> produces confusing <code>OperationalError</code>s at first click, not at boot.</td></tr>
+<tr><td><b>At least one user account</b></td><td>A login screen with no accounts is a dead end. This check is the difference between a two-minute start and an hour lost.</td></tr>
+</tbody>
+</table>
+
+<h3>2.4 Running without the agent</h3>
+<p><code>run.bat</code> starts <b>only the dashboard</b>. The automation is a separate process and
+is off by default (<code>AGENT_ENABLED=false</code>). Section 10 covers starting it. This
+separation is deliberate — see §3.3.</p>
+
+<h2 id="s3"><span class="num">3</span>Architecture</h2>
+
+<h3>3.1 The layers</h3>
+<p>A modular monolith: one process, four layers, and a hard rule about which way imports may
+point. The rule is not a convention — it is checked by <code>import-linter</code> as one of the
+six gates, so a violation fails the build.</p>
+
+<figure>
+<svg viewBox="0 0 700 330" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="10">
+  <defs>
+    <marker id="a2" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#26658C"/>
+    </marker>
+  </defs>
+
+  <rect x="18" y="8" width="510" height="58" rx="7" fill="#A7EBF2" stroke="#54ACBF" stroke-width="1.5"/>
+  <text x="34" y="28" fill="#011C40" font-weight="700" font-size="11">ui/ — Streamlit</text>
+  <text x="34" y="44" fill="#023859" font-size="8.6">app.py · 8 pages · components · styles · state · session</text>
+  <text x="34" y="58" fill="#26658C" font-size="8">decides what to show; contains no business rules</text>
+
+  <rect x="18" y="82" width="510" height="58" rx="7" fill="#54ACBF" stroke="#26658C" stroke-width="1.5"/>
+  <text x="34" y="102" fill="#fff" font-weight="700" font-size="11">services/ — orchestration</text>
+  <text x="34" y="118" fill="#012F4A" font-size="8.6">agent · approval · dispatch · generation · delivery · campaign · ingestion · settings · auth</text>
+  <text x="34" y="132" fill="#012F4A" font-size="8">transactions and workflow. Zero Streamlit imports — this is what makes a FastAPI shell additive.</text>
+
+  <rect x="18" y="156" width="510" height="62" rx="7" fill="#26658C" stroke="#023859" stroke-width="1.5"/>
+  <text x="34" y="176" fill="#fff" font-weight="700" font-size="11">modules/ — capabilities</text>
+  <text x="34" y="192" fill="#D6EEF5" font-size="8.6">discovery · scraper · cleaner · ai · newsletter · template · email · repository · tunnel</text>
+  <text x="34" y="206" fill="#A7EBF2" font-size="8">each hides one external thing behind an interface. This is where every swap happens.</text>
+
+  <rect x="18" y="234" width="510" height="58" rx="7" fill="#023859" stroke="#011C40" stroke-width="1.5"/>
+  <text x="34" y="254" fill="#fff" font-weight="700" font-size="11">core/ + config/ — contracts</text>
+  <text x="34" y="270" fill="#A7EBF2" font-size="8.6">models · enums · schemas · validators · exceptions · auth · settings · logging</text>
+  <text x="34" y="284" fill="#8FBDD1" font-size="8">imports nothing from the layers above. Pure, testable, no I/O.</text>
+
+  <g stroke="#26658C" stroke-width="1.6" marker-end="url(#a2)">
+    <line x1="273" y1="66" x2="273" y2="78"/>
+    <line x1="273" y1="140" x2="273" y2="152"/>
+    <line x1="273" y1="218" x2="273" y2="230"/>
+  </g>
+
+  <rect x="548" y="8" width="134" height="284" rx="7" fill="#F3F9FB" stroke="#D6E4EB" stroke-dasharray="3,3"/>
+  <text x="615" y="28" text-anchor="middle" fill="#023859" font-weight="700" font-size="9.5">The rule</text>
+  <text x="560" y="48" fill="#43606F" font-size="8.2">Imports point</text>
+  <text x="560" y="61" fill="#43606F" font-size="8.2">downward only.</text>
+  <text x="560" y="82" fill="#43606F" font-size="8.2">A service may not</text>
+  <text x="560" y="95" fill="#43606F" font-size="8.2">import a page.</text>
+  <text x="560" y="115" fill="#43606F" font-size="8.2">A module may not</text>
+  <text x="560" y="128" fill="#43606F" font-size="8.2">import a service.</text>
+  <text x="560" y="148" fill="#43606F" font-size="8.2">core/ may not</text>
+  <text x="560" y="161" fill="#43606F" font-size="8.2">import anything</text>
+  <text x="560" y="174" fill="#43606F" font-size="8.2">of ours at all.</text>
+  <line x1="560" y1="190" x2="670" y2="190" stroke="#D6E4EB"/>
+  <text x="560" y="208" fill="#0E8F6F" font-size="8.2" font-weight="700">4 contracts</text>
+  <text x="560" y="221" fill="#0E8F6F" font-size="8.2" font-weight="700">kept, 0 broken</text>
+  <text x="560" y="242" fill="#6B8494" font-size="7.8">verified by</text>
+  <text x="560" y="253" fill="#6B8494" font-size="7.8">lint-imports</text>
+  <text x="560" y="264" fill="#6B8494" font-size="7.8">on every run</text>
+</svg>
+<figcaption><b>Figure 2 — Layers and the import rule.</b> The value of the rule is concrete: because
+<code>services/</code> has no Streamlit import, the entire business layer is callable from a
+script, a test, a scheduler, or a future HTTP API. <code>agent_worker.py</code> is the proof —
+it drives the whole pipeline with no UI present.</figcaption>
+</figure>
+
+<h3>3.2 What lives where</h3>
+<table>
+<thead><tr><th style="width:20%">Path</th><th style="width:12%">Files</th><th>Contains</th></tr></thead>
+<tbody>
+<tr><td><code>core/</code></td><td>7</td><td>Pydantic models, enums, JSON schemas, validators, exception hierarchy, password &amp; token crypto</td></tr>
+<tr><td><code>config/</code></td><td>3</td><td>Settings sections, structlog setup, path constants</td></tr>
+<tr><td><code>modules/</code></td><td>36</td><td>The nine capability packages — every external dependency is behind one of them</td></tr>
+<tr><td><code>services/</code></td><td>17</td><td>Orchestration; one service per user-visible workflow</td></tr>
+<tr><td><code>ui/</code></td><td>14</td><td>Eight pages plus shared components, styles, session and state helpers</td></tr>
+<tr><td><code>prompts/</code></td><td>4 + shared</td><td>Versioned YAML prompts with Jinja2 bodies</td></tr>
+<tr><td><code>templates/</code></td><td>3 + 1</td><td>Three email templates; internal (approval) templates kept separate — see §9.3</td></tr>
+<tr><td><code>migrations/</code></td><td>5</td><td>Alembic revisions</td></tr>
+<tr><td><code>tests/</code></td><td>—</td><td>1,168 tests: unit, integration, e2e (<code>AppTest</code>)</td></tr>
+<tr><td><code>scripts/</code></td><td>—</td><td><code>create_user</code>, <code>check_no_local_inference</code>, <code>validate_prompts</code>, doc-link checker</td></tr>
+</tbody>
+</table>
+
+<h3>3.3 Two processes, not one</h3>
+<p>This is the single most important operational fact in the document.</p>
+
+<figure>
+<svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="10">
+  <defs>
+    <marker id="a3" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#26658C"/>
+    </marker>
+  </defs>
+
+  <rect x="16" y="16" width="300" height="150" rx="8" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.6"/>
+  <text x="32" y="38" fill="#023859" font-weight="700" font-size="11">Process 1 — Dashboard</text>
+  <text x="32" y="54" fill="#26658C" font-size="8.4" font-family="Consolas,monospace">run.bat → streamlit run app.py</text>
+  <line x1="32" y1="62" x2="300" y2="62" stroke="#C4DFE9"/>
+  <text x="32" y="80" fill="#43606F" font-size="8.6">· serves the browser UI on port 8501</text>
+  <text x="32" y="95" fill="#43606F" font-size="8.6">· manual generation and sending</text>
+  <text x="32" y="110" fill="#43606F" font-size="8.6">· settings, recipients, history, logs</text>
+  <text x="32" y="125" fill="#43606F" font-size="8.6">· serves the approval review page</text>
+  <text x="32" y="145" fill="#C43B47" font-size="8.4" font-weight="700">runs no schedule, discovers nothing</text>
+
+  <rect x="384" y="16" width="300" height="150" rx="8" fill="#FDF2DE" stroke="#E0A22C" stroke-width="1.6"/>
+  <text x="400" y="38" fill="#8A5E08" font-weight="700" font-size="11">Process 2 — Agent worker</text>
+  <text x="400" y="54" fill="#8A5E08" font-size="8.4" font-family="Consolas,monospace">run_agent.bat → agent_worker.py</text>
+  <line x1="400" y1="62" x2="668" y2="62" stroke="#EBD5A8"/>
+  <text x="400" y="80" fill="#6B5410" font-size="8.6">· APScheduler BlockingScheduler</text>
+  <text x="400" y="95" fill="#6B5410" font-size="8.6">· discovery job every N hours</text>
+  <text x="400" y="110" fill="#6B5410" font-size="8.6">· dispatch job every 5 minutes</text>
+  <text x="400" y="125" fill="#6B5410" font-size="8.6">· sends approval emails; sends campaigns</text>
+  <text x="400" y="145" fill="#C43B47" font-size="8.4" font-weight="700">no UI — if it is not running, nothing is automatic</text>
+
+  <rect x="230" y="196" width="240" height="42" rx="7" fill="#023859"/>
+  <text x="350" y="214" text-anchor="middle" fill="#fff" font-weight="700" font-size="10">data/newsletter.db</text>
+  <text x="350" y="229" text-anchor="middle" fill="#A7EBF2" font-size="8">SQLite in WAL mode — the only thing they share</text>
+
+  <g stroke="#26658C" stroke-width="1.5" marker-end="url(#a3)">
+    <path d="M166 166 L166 186 L246 186 L246 194" fill="none"/>
+    <path d="M534 166 L534 186 L454 186 L454 194" fill="none"/>
+  </g>
+</svg>
+<figcaption><b>Figure 3 — The two processes.</b> They never call each other; they coordinate purely
+through database rows. WAL mode is what allows the worker to write while the dashboard reads.
+<b>The most common support question — "why isn't the agent doing anything?" — is almost always
+that Process 2 was never started.</b></figcaption>
+</figure>
+
+<div class="note"><b>Why separate</b>
+Streamlit re-executes <code>app.py</code> top to bottom on every click, and a Streamlit session
+ends when the browser tab closes. A scheduler living inside that model would be restarted
+constantly, would run once per open tab, and would stop when the last tab closed. A separate
+process gets one clock, one instance, and a lifetime independent of anyone's browser.</div>
+
+<h3>3.4 External dependencies at runtime</h3>
+<table>
+<thead><tr><th style="width:22%">Service</th><th style="width:14%">Required?</th><th>Used for · failure behaviour</th></tr></thead>
+<tbody>
+<tr><td>Groq API</td><td><span class="pill p-no">required</span></td>
+    <td>All generation. Failures raise typed errors (<code>LLMRateLimitedError</code>,
+    <code>LLMTimeoutError</code>); a circuit breaker opens after repeated failures so a dead
+    endpoint fails fast instead of hanging every request.</td></tr>
+<tr><td>Mail provider</td><td><span class="pill p-no">required to send</span></td>
+    <td>SMTP (Gmail) or Brevo. <code>console</code> writes <code>.eml</code> files to
+    <code>data/outbox/</code> and sends nothing — the safe default.</td></tr>
+<tr><td>vaysinfotech.com</td><td><span class="pill p-mid">agent only</span></td>
+    <td>Blog discovery. Unreachable → the discovery job logs and returns; the next run retries.</td></tr>
+<tr><td>ngrok</td><td><span class="pill p-ok">optional</span></td>
+    <td>Only to make approval links clickable from outside the LAN. Absent → links fall back to
+    <code>http://localhost:8501</code>, which works fine when approving from the same machine.</td></tr>
+</tbody>
+</table>
+
+<h2 id="s4"><span class="num">4</span>How the system flows</h2>
+
+<h3>4.1 The manual flow</h3>
+<p>What a marketing user does today, and the code path behind each click.</p>
+
+<figure>
+<svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="10">
+  <defs>
+    <marker id="b1" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#26658C"/>
+    </marker>
+  </defs>
+  <rect x="8" y="8" width="120" height="284" rx="6" fill="#F3F9FB" stroke="#D6E4EB"/>
+  <text x="68" y="26" text-anchor="middle" fill="#023859" font-weight="700" font-size="9">USER · browser</text>
+  <rect x="140" y="8" width="240" height="284" rx="6" fill="#FAFDFE" stroke="#D6E4EB"/>
+  <text x="260" y="26" text-anchor="middle" fill="#023859" font-weight="700" font-size="9">SERVICES</text>
+  <rect x="392" y="8" width="300" height="284" rx="6" fill="#FAFDFE" stroke="#D6E4EB"/>
+  <text x="542" y="26" text-anchor="middle" fill="#023859" font-weight="700" font-size="9">MODULES · external</text>
+
+  <g font-size="8.4">
+    <rect x="18" y="42" width="100" height="30" rx="5" fill="#A7EBF2" stroke="#54ACBF"/>
+    <text x="68" y="61" text-anchor="middle" fill="#011C40" font-weight="600">paste URLs</text>
+
+    <rect x="152" y="42" width="216" height="30" rx="5" fill="#54ACBF" stroke="#26658C"/>
+    <text x="260" y="56" text-anchor="middle" fill="#fff" font-weight="600">IngestionService</text>
+    <text x="260" y="67" text-anchor="middle" fill="#012F4A" font-size="7.4">.ingest_urls()</text>
+
+    <rect x="404" y="42" width="130" height="30" rx="5" fill="#E9F4F8" stroke="#54ACBF"/>
+    <text x="469" y="56" text-anchor="middle" fill="#023859" font-weight="600">scraper (3 tiers)</text>
+    <text x="469" y="67" text-anchor="middle" fill="#43606F" font-size="7.4">trafilatura→n4k→bs4</text>
+
+    <rect x="546" y="42" width="130" height="30" rx="5" fill="#E9F4F8" stroke="#54ACBF"/>
+    <text x="611" y="56" text-anchor="middle" fill="#023859" font-weight="600">cleaner</text>
+    <text x="611" y="67" text-anchor="middle" fill="#43606F" font-size="7.4">token budget 3000</text>
+
+    <rect x="18" y="98" width="100" height="30" rx="5" fill="#A7EBF2" stroke="#54ACBF"/>
+    <text x="68" y="117" text-anchor="middle" fill="#011C40" font-weight="600">Generate</text>
+
+    <rect x="152" y="98" width="216" height="30" rx="5" fill="#54ACBF" stroke="#26658C"/>
+    <text x="260" y="112" text-anchor="middle" fill="#fff" font-weight="600">GenerationService</text>
+    <text x="260" y="123" text-anchor="middle" fill="#012F4A" font-size="7.4">.generate()</text>
+
+    <rect x="404" y="90" width="272" height="46" rx="5" fill="#023859"/>
+    <text x="540" y="106" text-anchor="middle" fill="#fff" font-weight="600">AIEngine → GroqProvider</text>
+    <text x="540" y="118" text-anchor="middle" fill="#A7EBF2" font-size="7.4">stage 1: article_summary (per article)</text>
+    <text x="540" y="129" text-anchor="middle" fill="#A7EBF2" font-size="7.4">stage 2: newsletter_compose (once)</text>
+
+    <rect x="18" y="160" width="100" height="30" rx="5" fill="#A7EBF2" stroke="#54ACBF"/>
+    <text x="68" y="173" text-anchor="middle" fill="#011C40" font-weight="600">edit &amp;</text>
+    <text x="68" y="184" text-anchor="middle" fill="#011C40" font-weight="600">preview</text>
+
+    <rect x="152" y="160" width="216" height="30" rx="5" fill="#54ACBF" stroke="#26658C"/>
+    <text x="260" y="174" text-anchor="middle" fill="#fff" font-weight="600">CampaignService</text>
+    <text x="260" y="185" text-anchor="middle" fill="#012F4A" font-size="7.4">.save_draft() · field regenerate</text>
+
+    <rect x="404" y="160" width="272" height="30" rx="5" fill="#E9F4F8" stroke="#54ACBF"/>
+    <text x="540" y="174" text-anchor="middle" fill="#023859" font-weight="600">TemplateRenderer</text>
+    <text x="540" y="185" text-anchor="middle" fill="#43606F" font-size="7.4">Jinja2 → CSS-inlined HTML + plain text</text>
+
+    <rect x="18" y="222" width="100" height="30" rx="5" fill="#FDF2DE" stroke="#E0A22C" stroke-width="1.4"/>
+    <text x="68" y="241" text-anchor="middle" fill="#8A5E08" font-weight="700">confirm send</text>
+
+    <rect x="152" y="222" width="216" height="30" rx="5" fill="#54ACBF" stroke="#26658C"/>
+    <text x="260" y="236" text-anchor="middle" fill="#fff" font-weight="600">DeliveryService</text>
+    <text x="260" y="247" text-anchor="middle" fill="#012F4A" font-size="7.4">4 guards → BatchSender</text>
+
+    <rect x="404" y="222" width="272" height="30" rx="5" fill="#DEF3EC" stroke="#0E8F6F" stroke-width="1.4"/>
+    <text x="540" y="236" text-anchor="middle" fill="#0A6B53" font-weight="700">EmailProvider → recipients</text>
+    <text x="540" y="247" text-anchor="middle" fill="#0A6B53" font-size="7.4">batched, retried, every send logged</text>
+  </g>
+
+  <g stroke="#26658C" stroke-width="1.3" marker-end="url(#b1)" fill="none">
+    <line x1="118" y1="57" x2="148" y2="57"/>  <line x1="368" y1="57" x2="400" y2="57"/>
+    <line x1="534" y1="57" x2="542" y2="57"/>
+    <line x1="118" y1="113" x2="148" y2="113"/> <line x1="368" y1="113" x2="400" y2="113"/>
+    <line x1="118" y1="175" x2="148" y2="175"/> <line x1="368" y1="175" x2="400" y2="175"/>
+    <line x1="118" y1="237" x2="148" y2="237"/> <line x1="368" y1="237" x2="400" y2="237"/>
+    <line x1="68" y1="72" x2="68" y2="94"/>  <line x1="68" y1="128" x2="68" y2="156"/>
+    <line x1="68" y1="190" x2="68" y2="218"/>
+  </g>
+</svg>
+<figcaption><b>Figure 4 — Manual flow.</b> Each row is one user action. The user never touches a
+module directly; the page calls a service, and only the service knows which modules are involved.
+That is why swapping the email provider (§9.2) changes no page code.</figcaption>
+</figure>
+
+<h3>4.2 The automated agent flow</h3>
+<p>The same pipeline with a scheduler in front and an email approval in the middle. Two jobs run
+on different clocks, and they are deliberately independent.</p>
+
+<figure>
+<svg viewBox="0 0 700 470" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="10">
+  <defs>
+    <marker id="c1" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#26658C"/>
+    </marker>
+    <marker id="c2" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#C43B47"/>
+    </marker>
+  </defs>
+
+  <text x="175" y="16" text-anchor="middle" fill="#8A5E08" font-weight="700" font-size="9.5">
+    JOB A — discovery · every 6 hours</text>
+  <text x="520" y="16" text-anchor="middle" fill="#0A6B53" font-weight="700" font-size="9.5">
+    JOB B — dispatch · every 5 minutes</text>
+  <line x1="350" y1="24" x2="350" y2="452" stroke="#D6E4EB" stroke-dasharray="4,4"/>
+
+  <g font-size="8.3">
+    <rect x="46" y="30" width="258" height="26" rx="5" fill="#FDF2DE" stroke="#E0A22C"/>
+    <text x="175" y="47" text-anchor="middle" fill="#8A5E08" font-weight="700">AgentService.run()</text>
+
+    <path d="M175 56 L175 68" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <polygon points="175,70 300,96 175,122 50,96" fill="#F3F9FB" stroke="#54ACBF" stroke-width="1.3"/>
+    <text x="175" y="92" text-anchor="middle" fill="#023859" font-weight="600">in-flight campaigns</text>
+    <text x="175" y="104" text-anchor="middle" fill="#023859" font-weight="600">&lt; max_in_flight?</text>
+
+    <text x="312" y="94" fill="#C43B47" font-size="7.6" font-weight="700">no</text>
+    <path d="M300 96 L322 96 L322 44 L306 44" stroke="#C43B47" stroke-width="1.3" fill="none" marker-end="url(#c2)"/>
+    <text x="330" y="66" fill="#C43B47" font-size="7.4">hold —</text>
+    <text x="330" y="76" fill="#C43B47" font-size="7.4">do nothing</text>
+
+    <text x="182" y="134" fill="#0E8F6F" font-size="7.6" font-weight="700">yes</text>
+    <path d="M175 122 L175 136" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <rect x="46" y="138" width="258" height="34" rx="5" fill="#E9F4F8" stroke="#54ACBF"/>
+    <text x="175" y="153" text-anchor="middle" fill="#023859" font-weight="600">discover_posts()</text>
+    <text x="175" y="165" text-anchor="middle" fill="#43606F" font-size="7.4">WordPress REST → RSS fallback</text>
+
+    <path d="M175 172 L175 184" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <rect x="46" y="186" width="258" height="34" rx="5" fill="#E9F4F8" stroke="#54ACBF"/>
+    <text x="175" y="201" text-anchor="middle" fill="#023859" font-weight="600">DiscoveredPostRepository.record()</text>
+    <text x="175" y="213" text-anchor="middle" fill="#C43B47" font-size="7.4">UNIQUE(dedupe_key) — seen before? skip</text>
+
+    <path d="M175 220 L175 232" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <rect x="46" y="234" width="258" height="34" rx="5" fill="#E9F4F8" stroke="#54ACBF"/>
+    <text x="175" y="249" text-anchor="middle" fill="#023859" font-weight="600">extract → clean → generate</text>
+    <text x="175" y="261" text-anchor="middle" fill="#43606F" font-size="7.4">max_posts_per_run = 1</text>
+
+    <path d="M175 268 L175 280" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <rect x="46" y="282" width="258" height="34" rx="5" fill="#FDF2DE" stroke="#E0A22C" stroke-width="1.4"/>
+    <text x="175" y="297" text-anchor="middle" fill="#8A5E08" font-weight="700">campaign → AWAITING_APPROVAL</text>
+    <text x="175" y="309" text-anchor="middle" fill="#8A5E08" font-size="7.4">ApprovalService.issue() + notify</text>
+
+    <path d="M175 316 L175 330" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <rect x="46" y="332" width="258" height="42" rx="5" fill="#fff" stroke="#26658C" stroke-width="1.4"/>
+    <text x="175" y="348" text-anchor="middle" fill="#023859" font-weight="700">✉ email to management</text>
+    <text x="175" y="360" text-anchor="middle" fill="#43606F" font-size="7.4">Approve / Reject — single-use signed link</text>
+    <text x="175" y="370" text-anchor="middle" fill="#6B8494" font-size="7">expires after 72 h</text>
+
+    <path d="M175 374 L175 388" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <rect x="46" y="390" width="258" height="34" rx="5" fill="#DEF3EC" stroke="#0E8F6F" stroke-width="1.4"/>
+    <text x="175" y="405" text-anchor="middle" fill="#0A6B53" font-weight="700">human clicks Approve</text>
+    <text x="175" y="417" text-anchor="middle" fill="#0A6B53" font-size="7.4">status → APPROVED, approved_at = now (UTC)</text>
+  </g>
+
+  <g font-size="8.3">
+    <rect x="396" y="30" width="288" height="26" rx="5" fill="#DEF3EC" stroke="#0E8F6F"/>
+    <text x="540" y="47" text-anchor="middle" fill="#0A6B53" font-weight="700">DispatchService.run()</text>
+
+    <path d="M540 56 L540 70" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <rect x="396" y="72" width="288" height="34" rx="5" fill="#E9F4F8" stroke="#54ACBF"/>
+    <text x="540" y="87" text-anchor="middle" fill="#023859" font-weight="600">find campaigns with status = APPROVED</text>
+    <text x="540" y="99" text-anchor="middle" fill="#43606F" font-size="7.4">nothing else is even considered</text>
+
+    <path d="M540 106 L540 120" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <polygon points="540,122 684,158 540,194 396,158" fill="#F3F9FB" stroke="#54ACBF" stroke-width="1.3"/>
+    <text x="540" y="150" text-anchor="middle" fill="#023859" font-weight="600">now ≥ next_send_after(approved_at)?</text>
+    <text x="540" y="163" text-anchor="middle" fill="#43606F" font-size="7.4">3rd Wednesday of the month, 11:00</text>
+    <text x="540" y="175" text-anchor="middle" fill="#43606F" font-size="7.4">Asia/Kolkata</text>
+
+    <text x="691" y="172" text-anchor="middle" fill="#C43B47" font-size="7.6" font-weight="700">no</text>
+    <path d="M684 158 L693 158 L693 40 L686 40" stroke="#C43B47" stroke-width="1.3" fill="none" marker-end="url(#c2)"/>
+    <text x="684" y="210" text-anchor="end" fill="#C43B47" font-size="7.4">wait — re-checked in 5 minutes</text>
+
+    <text x="548" y="208" fill="#0E8F6F" font-size="7.6" font-weight="700">yes</text>
+    <path d="M540 194 L540 216" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <rect x="396" y="218" width="288" height="34" rx="5" fill="#54ACBF" stroke="#26658C"/>
+    <text x="540" y="233" text-anchor="middle" fill="#fff" font-weight="600">RecipientSource — master list</text>
+    <text x="540" y="245" text-anchor="middle" fill="#012F4A" font-size="7.4">subscribers table, active only</text>
+
+    <path d="M540 252 L540 266" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <rect x="396" y="268" width="288" height="46" rx="5" fill="#023859"/>
+    <text x="540" y="284" text-anchor="middle" fill="#fff" font-weight="700">DeliveryService.send()</text>
+    <text x="540" y="296" text-anchor="middle" fill="#A7EBF2" font-size="7.4">the same four guards as a manual send</text>
+    <text x="540" y="307" text-anchor="middle" fill="#A7EBF2" font-size="7.4">begin_send() conditional UPDATE</text>
+
+    <path d="M540 314 L540 328" stroke="#26658C" stroke-width="1.3" marker-end="url(#c1)"/>
+    <rect x="396" y="330" width="288" height="34" rx="5" fill="#DEF3EC" stroke="#0E8F6F" stroke-width="1.4"/>
+    <text x="540" y="345" text-anchor="middle" fill="#0A6B53" font-weight="700">batched send → SENT</text>
+    <text x="540" y="357" text-anchor="middle" fill="#0A6B53" font-size="7.4">one send_record row per recipient</text>
+
+    <rect x="396" y="384" width="288" height="72" rx="5" fill="#FDF3F4" stroke="#C43B47" stroke-dasharray="3,3"/>
+    <text x="540" y="401" text-anchor="middle" fill="#C43B47" font-weight="700" font-size="8.6">Why two clocks?</text>
+    <text x="406" y="416" fill="#8B2E37" font-size="7.6">Discovery is frequent so a new post is picked up</text>
+    <text x="406" y="427" fill="#8B2E37" font-size="7.6">quickly. Dispatch is frequent so the send fires close</text>
+    <text x="406" y="438" fill="#8B2E37" font-size="7.6">to 11:00. Neither controls how often mail goes out —</text>
+  </g>
+  <text x="406" y="449" fill="#8B2E37" font-size="7.6">that is the schedule plus max_in_flight.</text>
+</svg>
+<figcaption><b>Figure 5 — Automated flow.</b> The two jobs never call each other. Job A produces
+an <code>APPROVED</code> row (via a human); Job B consumes one. The <code>max_in_flight</code>
+check at the top of Job A is what enforces "one newsletter per month" — see §5.3 for why a
+per-run cap was not enough.</figcaption>
+</figure>
+
+<h3>4.3 The approval link</h3>
+<p>The approval email contains a URL that must be safe to send through an inbox — it is,
+in effect, a password sitting in someone's mailbox. Five properties make that acceptable.</p>
+
+<figure>
+<svg viewBox="0 0 700 210" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="10">
+  <defs><marker id="d1" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
+    <polygon points="0 0, 9 3.5, 0 7" fill="#26658C"/></marker></defs>
+
+  <rect x="10" y="26" width="150" height="52" rx="6" fill="#023859"/>
+  <text x="85" y="45" text-anchor="middle" fill="#fff" font-weight="700" font-size="9">issue()</text>
+  <text x="85" y="58" text-anchor="middle" fill="#A7EBF2" font-size="7.6">secrets.token_urlsafe</text>
+  <text x="85" y="69" text-anchor="middle" fill="#A7EBF2" font-size="7.6">→ raw token</text>
+
+  <rect x="192" y="26" width="150" height="52" rx="6" fill="#54ACBF" stroke="#26658C"/>
+  <text x="267" y="45" text-anchor="middle" fill="#fff" font-weight="700" font-size="9">store sha256(token)</text>
+  <text x="267" y="58" text-anchor="middle" fill="#012F4A" font-size="7.6">the raw value is never</text>
+  <text x="267" y="69" text-anchor="middle" fill="#012F4A" font-size="7.6">written to the database</text>
+
+  <rect x="374" y="26" width="150" height="52" rx="6" fill="#E9F4F8" stroke="#54ACBF"/>
+  <text x="449" y="45" text-anchor="middle" fill="#023859" font-weight="700" font-size="9">email the raw token</text>
+  <text x="449" y="58" text-anchor="middle" fill="#43606F" font-size="7.6">in the review URL</text>
+  <text x="449" y="69" text-anchor="middle" fill="#43606F" font-size="7.6">only place it exists</text>
+
+  <rect x="556" y="26" width="134" height="52" rx="6" fill="#DEF3EC" stroke="#0E8F6F"/>
+  <text x="623" y="45" text-anchor="middle" fill="#0A6B53" font-weight="700" font-size="9">click → check()</text>
+  <text x="623" y="58" text-anchor="middle" fill="#0A6B53" font-size="7.6">hash again, compare,</text>
+  <text x="623" y="69" text-anchor="middle" fill="#0A6B53" font-size="7.6">then consume</text>
+
+  <g stroke="#26658C" stroke-width="1.4" marker-end="url(#d1)">
+    <line x1="160" y1="52" x2="188" y2="52"/><line x1="342" y1="52" x2="370" y2="52"/>
+    <line x1="524" y1="52" x2="552" y2="52"/>
+  </g>
+
+  <rect x="10" y="102" width="680" height="94" rx="6" fill="#F3F9FB" stroke="#D6E4EB"/>
+  <text x="24" y="120" fill="#023859" font-weight="700" font-size="9">Five properties, and the attack each one closes</text>
+  <text x="24" y="139" fill="#43606F" font-size="8.2"><tspan font-weight="700" fill="#023859">Random</tspan> — 32 bytes from secrets. Not guessable, not derived from the campaign id.</text>
+  <text x="24" y="153" fill="#43606F" font-size="8.2"><tspan font-weight="700" fill="#023859">Hashed at rest</tspan> — a leaked database backup does not yield a working approval link.</text>
+  <text x="24" y="167" fill="#43606F" font-size="8.2"><tspan font-weight="700" fill="#023859">Single use</tspan> — consumed on first successful use, so a forwarded email cannot approve twice.</text>
+  <text x="24" y="181" fill="#43606F" font-size="8.2"><tspan font-weight="700" fill="#023859">Expiring</tspan> — 72 h default. <tspan font-weight="700" fill="#023859">Campaign-scoped</tspan> — a token for campaign 12 cannot approve campaign 13.</text>
+</svg>
+<figcaption><b>Figure 6 — Approval token lifecycle.</b> Implemented in
+<code>services/approval_service.py</code>. Note the UTC discipline: SQLite returns naive
+datetimes, so <code>_as_utc()</code> normalises before every comparison — without it, every
+expiry check raised <code>TypeError</code>. That was a real bug, caught by a test.</figcaption>
+</figure>
+
+<h3>4.4 The four guards between "send" and a customer's inbox</h3>
+<p>Every send — manual or automated — passes through all four. Each has a test named after the
+failure it prevents, because each corresponds to an email a customer would otherwise have
+received twice or should not have received at all.</p>
+
+<figure>
+<svg viewBox="0 0 700 230" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="10">
+  <defs><marker id="e1" markerWidth="8" markerHeight="6" refX="7.5" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#26658C"/></marker></defs>
+
+  <rect x="150" y="10" width="400" height="26" rx="5" fill="#A7EBF2" stroke="#54ACBF"/>
+  <text x="350" y="27" text-anchor="middle" fill="#011C40" font-weight="700">send requested</text>
+  <line x1="350" y1="36" x2="350" y2="46" stroke="#26658C" stroke-width="1.4" marker-end="url(#e1)"/>
+
+  <rect x="170" y="48" width="360" height="30" rx="5" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.3"/>
+  <text x="186" y="62" fill="#023859" font-weight="700" font-size="9">1 · Suppression list</text>
+  <text x="186" y="73" fill="#43606F" font-size="7.6">bulk-checked pre-send — an unsubscribe survives a re-uploaded CSV</text>
+  <line x1="350" y1="78" x2="350" y2="88" stroke="#26658C" stroke-width="1.4" marker-end="url(#e1)"/>
+
+  <rect x="186" y="90" width="328" height="30" rx="5" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.3"/>
+  <text x="202" y="104" fill="#023859" font-weight="700" font-size="9">2 · Double-send guard</text>
+  <text x="202" y="115" fill="#43606F" font-size="7.6">begin_send() conditional UPDATE — a Streamlit rerun cannot fire twice</text>
+  <line x1="350" y1="120" x2="350" y2="130" stroke="#26658C" stroke-width="1.4" marker-end="url(#e1)"/>
+
+  <rect x="202" y="132" width="296" height="30" rx="5" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.3"/>
+  <text x="218" y="146" fill="#023859" font-weight="700" font-size="9">3 · Retry skips delivered</text>
+  <text x="218" y="157" fill="#43606F" font-size="7.6">"retry failed only" never re-mails a success</text>
+  <line x1="350" y1="162" x2="350" y2="172" stroke="#26658C" stroke-width="1.4" marker-end="url(#e1)"/>
+
+  <rect x="218" y="174" width="264" height="30" rx="5" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.3"/>
+  <text x="234" y="188" fill="#023859" font-weight="700" font-size="9">4 · Render-time compliance</text>
+  <text x="234" y="199" fill="#43606F" font-size="7.6">no unsubscribe link or postal address → no email</text>
+
+  <rect x="562" y="48" width="128" height="156" rx="5" fill="#FDF3F4" stroke="#C43B47" stroke-dasharray="3,3"/>
+  <text x="626" y="66" text-anchor="middle" fill="#C43B47" font-weight="700" font-size="8.6">Failure policy</text>
+  <text x="572" y="84" fill="#8B2E37" font-size="7.6">Per-recipient failure</text>
+  <text x="572" y="95" fill="#8B2E37" font-size="7.6">→ mark FAILED,</text>
+  <text x="572" y="106" fill="#8B2E37" font-size="7.6">continue the batch.</text>
+  <text x="572" y="126" fill="#8B2E37" font-size="7.6">Account failure</text>
+  <text x="572" y="137" fill="#8B2E37" font-size="7.6">(401 / 402) → stop,</text>
+  <text x="572" y="148" fill="#8B2E37" font-size="7.6">carry</text>
+  <text x="572" y="159" fill="#8B2E37" font-size="7.2" font-family="Consolas">sent_before_failure</text>
+  <text x="572" y="172" fill="#8B2E37" font-size="7.6">so what went out is</text>
+  <text x="572" y="183" fill="#8B2E37" font-size="7.6">recorded and not</text>
+  <text x="572" y="194" fill="#8B2E37" font-size="7.6">re-sent on retry.</text>
+</svg>
+<figcaption><b>Figure 7 — The send guards.</b> Guard 2 deserves emphasis: it is a conditional
+<code>UPDATE ... WHERE status IN (SENDABLE_STATES)</code>, so the database decides, not the
+application. <code>AWAITING_APPROVAL</code> is deliberately absent from
+<code>SENDABLE_STATES</code> — that single omission is what makes an unapproved campaign
+unsendable, through the guard that already existed.</figcaption>
+</figure>
+
+<h3>4.5 Campaign states</h3>
+<figure>
+<svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="10">
+  <defs><marker id="f1" markerWidth="8" markerHeight="6" refX="7.5" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#26658C"/></marker>
+    <marker id="f2" markerWidth="8" markerHeight="6" refX="7.5" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#C43B47"/></marker></defs>
+
+  <g font-size="8.4" font-weight="700">
+    <rect x="14" y="66" width="82" height="28" rx="14" fill="#8A94A3"/>
+    <text x="55" y="84" text-anchor="middle" fill="#fff">DRAFT</text>
+
+    <rect x="130" y="66" width="82" height="28" rx="14" fill="#54ACBF"/>
+    <text x="171" y="84" text-anchor="middle" fill="#fff">READY</text>
+
+    <rect x="246" y="66" width="112" height="28" rx="14" fill="#E0A22C"/>
+    <text x="302" y="84" text-anchor="middle" fill="#fff" font-size="7.8">AWAITING_APPROVAL</text>
+
+    <rect x="392" y="66" width="82" height="28" rx="14" fill="#26658C"/>
+    <text x="433" y="84" text-anchor="middle" fill="#fff">APPROVED</text>
+
+    <rect x="508" y="66" width="82" height="28" rx="14" fill="#10B981"/>
+    <text x="549" y="84" text-anchor="middle" fill="#fff">SENT</text>
+
+    <rect x="624" y="66" width="62" height="28" rx="14" fill="#89A0B0"/>
+    <text x="655" y="84" text-anchor="middle" fill="#fff" font-size="7.8">ARCHIVED</text>
+
+    <rect x="246" y="146" width="112" height="26" rx="13" fill="#F0616D"/>
+    <text x="302" y="163" text-anchor="middle" fill="#fff" font-size="7.8">REJECTED</text>
+
+    <rect x="508" y="146" width="82" height="26" rx="13" fill="#F0616D"/>
+    <text x="549" y="163" text-anchor="middle" fill="#fff" font-size="7.8">FAILED</text>
+  </g>
+
+  <g stroke="#26658C" stroke-width="1.4" marker-end="url(#f1)" fill="none">
+    <line x1="96" y1="80" x2="126" y2="80"/>
+    <line x1="212" y1="80" x2="242" y2="80"/>
+    <line x1="358" y1="80" x2="388" y2="80"/>
+    <line x1="474" y1="80" x2="504" y2="80"/>
+    <line x1="590" y1="80" x2="620" y2="80"/>
+    <path d="M171 66 L171 40 L433 40 L433 62"/>
+  </g>
+  <text x="302" y="34" text-anchor="middle" fill="#26658C" font-size="7.6">manual send — no approval step</text>
+
+  <g stroke="#C43B47" stroke-width="1.4" marker-end="url(#f2)" fill="none">
+    <line x1="302" y1="94" x2="302" y2="142"/>
+    <line x1="549" y1="94" x2="549" y2="142"/>
+  </g>
+  <text x="312" y="122" fill="#C43B47" font-size="7.6">rejected</text>
+  <text x="559" y="122" fill="#C43B47" font-size="7.6">provider error</text>
+
+  <text x="14" y="192" fill="#6B8494" font-size="7.8">
+    SENDABLE_STATES = {DRAFT, READY, APPROVED}. Transitions are validated by core.enums.can_transition() — an illegal move raises rather than corrupting a row.</text>
+</svg>
+<figcaption><b>Figure 8 — Campaign state machine.</b> The automated path adds
+<code>AWAITING_APPROVAL → APPROVED</code>; the manual path skips it. Both converge on
+<code>SENT</code> through the same code.</figcaption>
+</figure>
+
+<h2 id="s5"><span class="num">5</span>Timing — exactly what is calculated when</h2>
+
+<p class="lede">Three independent clocks, and they are frequently confused. Discovery cadence is
+not send frequency; the dispatch poll is not the send time. Only the schedule plus
+<code>max_in_flight</code> decides how often a customer receives mail.</p>
+
+<h3>5.1 The three clocks</h3>
+<table>
+<thead><tr><th style="width:20%">Clock</th><th style="width:16%">Default</th><th style="width:22%">Setting</th><th>What it actually controls</th></tr></thead>
+<tbody>
+<tr><td><b>Discovery</b></td><td>every 6 h</td><td><code>AGENT_DISCOVERY_INTERVAL_HOURS</code></td>
+    <td>How soon after publication a new blog post is <em>noticed</em>. Raising it does not send more email.</td></tr>
+<tr><td><b>Dispatch poll</b></td><td>every 5 min</td><td>fixed in <code>agent_worker.py</code></td>
+    <td>How precisely the send lands on 11:00. A 5-minute poll means a send fires by 11:05 at the latest.</td></tr>
+<tr><td><b>Send schedule</b></td><td>3rd Wed, 11:00</td><td><code>AGENT_SEND_*</code> (4 vars)</td>
+    <td><b>The only clock that decides when customers get mail.</b></td></tr>
+</tbody>
+</table>
+
+<h3>5.2 How the send moment is computed</h3>
+<p><code>Settings.next_send_after(approved_at)</code> in <code>config/settings.py</code> answers
+one question: given that a human approved at time <em>T</em>, what is the earliest legal moment
+to send? For the monthly schedule:</p>
+<ol>
+<li>Take the month of <em>T</em> in <code>AGENT_TIMEZONE</code> (default <code>Asia/Kolkata</code>).</li>
+<li>Find the <b>3rd Wednesday</b> of that month via <code>_nth_weekday_of_month()</code> — walk to the
+    first Wednesday, add 14 days.</li>
+<li>Set the clock to <code>AGENT_SEND_TIME</code> (<code>11:00</code>).</li>
+<li>If that instant is already past, roll forward with <code>_add_months(+1)</code> and repeat.</li>
+</ol>
+<p>The dispatch job then simply asks <code>now &gt;= next_send_after(approved_at)</code>. Approving
+early is therefore always safe: approval never sends, it only makes a campaign <em>eligible</em>.</p>
+
+<figure>
+<svg viewBox="0 0 700 150" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="10">
+  <line x1="30" y1="86" x2="670" y2="86" stroke="#26658C" stroke-width="2"/>
+  <g font-size="8">
+    <circle cx="90" cy="86" r="5" fill="#54ACBF"/>
+    <line x1="90" y1="86" x2="90" y2="60" stroke="#54ACBF"/>
+    <text x="90" y="52" text-anchor="middle" fill="#023859" font-weight="700">Aug 2</text>
+    <text x="90" y="42" text-anchor="middle" fill="#43606F">post found</text>
+    <text x="90" y="104" text-anchor="middle" fill="#6B8494">discovery job</text>
+
+    <circle cx="200" cy="86" r="5" fill="#54ACBF"/>
+    <line x1="200" y1="86" x2="200" y2="60" stroke="#54ACBF"/>
+    <text x="200" y="52" text-anchor="middle" fill="#023859" font-weight="700">Aug 2</text>
+    <text x="200" y="42" text-anchor="middle" fill="#43606F">generated</text>
+    <text x="200" y="104" text-anchor="middle" fill="#6B8494">+ approval email</text>
+    <text x="200" y="115" text-anchor="middle" fill="#E0A22C" font-weight="700">AWAITING_APPROVAL</text>
+
+    <circle cx="330" cy="86" r="5" fill="#E0A22C"/>
+    <line x1="330" y1="86" x2="330" y2="60" stroke="#E0A22C"/>
+    <text x="330" y="52" text-anchor="middle" fill="#8A5E08" font-weight="700">Aug 4</text>
+    <text x="330" y="42" text-anchor="middle" fill="#8A5E08">manager approves</text>
+    <text x="330" y="104" text-anchor="middle" fill="#6B8494">approved_at = Aug 4</text>
+    <text x="330" y="115" text-anchor="middle" fill="#26658C" font-weight="700">APPROVED — but not sent</text>
+
+    <rect x="352" y="76" width="180" height="20" rx="10" fill="#F3F9FB" stroke="#D6E4EB"/>
+    <text x="442" y="90" text-anchor="middle" fill="#6B8494" font-size="7.6">dispatch polls every 5 min · not due</text>
+
+    <circle cx="580" cy="86" r="7" fill="#0E8F6F"/>
+    <line x1="580" y1="86" x2="580" y2="56" stroke="#0E8F6F" stroke-width="1.4"/>
+    <text x="580" y="48" text-anchor="middle" fill="#0A6B53" font-weight="700">Wed Aug 19, 11:00</text>
+    <text x="580" y="38" text-anchor="middle" fill="#0A6B53">3rd Wednesday</text>
+    <text x="580" y="104" text-anchor="middle" fill="#0A6B53" font-weight="700">SENT to all recipients</text>
+    <text x="580" y="115" text-anchor="middle" fill="#6B8494">IST</text>
+  </g>
+  <text x="30" y="140" fill="#6B8494" font-size="7.8">
+    Discovery on Aug 2 does not mean a send on Aug 2. Approval on Aug 4 does not mean a send on Aug 4. The schedule alone decides.</text>
+</svg>
+<figcaption><b>Figure 9 — A real month.</b> Seventeen days pass between generation and delivery,
+and that is the intended behaviour, not a stall.</figcaption>
+</figure>
+
+<h3>5.3 Why <code>max_in_flight</code> exists</h3>
+<div class="warn"><b>A bug worth understanding before you change any timing setting</b>
+"One newsletter per month" was first implemented as <code>max_posts_per_run = 1</code>. That caps
+each <em>run</em>, not the month — and with discovery running every six hours, a backlog of blog
+posts produced a queue of campaigns that all became due on the same 3rd Wednesday.
+<b>This happened: nine newsletters went out within two minutes on 14 August.</b>
+The fix is <code>max_in_flight = 1</code>: the agent refuses to start any new work while a
+campaign is still unsent. Frequency is now bounded by the pipeline, not by the discovery
+cadence — which means discovery can safely run as often as you like.</div>
+
+<h3>5.4 Changing the schedule</h3>
+<pre><span class="c"># .env — or Settings → Agent in the dashboard, which needs no restart</span>
+AGENT_SEND_SCHEDULE=monthly   <span class="c"># monthly | daily</span>
+AGENT_SEND_WEEKDAY=wednesday
+AGENT_SEND_WEEK_OF_MONTH=3    <span class="c"># 1-5; ignored when schedule=daily</span>
+AGENT_SEND_TIME=11:00         <span class="c"># 24-hour HH:MM, anchored regex — "9:00" is rejected</span>
+AGENT_TIMEZONE=Asia/Kolkata</pre>
+<p>The dashboard renders the result in plain English via <code>describe_schedule()</code>
+("3rd Wednesday of each month at 11:00 IST"), so a mis-set field is visible before it matters.
+<code>AGENT_SEND_TIME</code> is validated by an anchored regex rather than
+<code>time.fromisoformat</code>, which accepts <code>24:00</code> and silently means midnight.</p>
+
+<h2 id="s6"><span class="num">6</span>Module reference</h2>
+
+<p class="lede">Every package, what it is responsible for, and its public surface. Private helpers
+(leading underscore) are omitted. Signatures are extracted from the source, so they are accurate
+as of this build.</p>
+
+<h3>6.1 <code>core/</code> — contracts and pure logic</h3>
+<p class="modnote">Imports nothing from the rest of the application. No I/O, no network, no
+database. This is what makes it trivially testable and safe to import from anywhere.</p>
+
+<div class="mod">core/models.py</div>
+<p class="modnote">Every object that crosses a layer boundary. 14 Pydantic models with
+<code>extra="forbid"</code>, so an unexpected field is an error rather than silent data loss.</p>
+<table class="fnlist">
+<thead><tr><th style="width:26%">Model</th><th>Carries</th></tr></thead>
+<tbody>
+<tr><td><code>ExtractedArticle</code></td><td>Raw scraper output — text, title, tier used, word count</td></tr>
+<tr><td><code>CleanedArticle</code></td><td>Normalised, deduped, truncated to the token budget</td></tr>
+<tr><td><code>Article</code></td><td>A persisted article with its identity and provenance</td></tr>
+<tr><td><code>IngestionResult</code></td><td>Per-URL success/failure for the whole ingest batch</td></tr>
+<tr><td><code>DiscoveredPost</code></td><td>A blog post the agent found — URL, external id, published date</td></tr>
+<tr><td><code>ArticleSummary</code></td><td>Stage-1 LLM output: key points, technical facts, relevance score</td></tr>
+<tr><td><code>NewsletterContent</code></td><td>Stage-2 LLM output: subject, preview text, body blocks, CTA</td></tr>
+<tr><td><code>NewsletterDraft</code></td><td>Generated content merged with user edits — what gets rendered</td></tr>
+<tr><td><code>GenerationRequest</code> / <code>GenerationParams</code> / <code>GenerationOptions</code></td>
+    <td>Tone, length, audience, temperature — the inputs to a generation</td></tr>
+<tr><td><code>LLMResponse</code>, <code>Message</code></td><td>Provider-neutral request/response shapes</td></tr>
+<tr><td><code>HealthStatus</code></td><td>One probe result — healthy, latency, detail</td></tr>
+</tbody>
+</table>
+
+<div class="mod">core/enums.py</div>
+<table class="fnlist">
+<tbody>
+<tr><td><code>CampaignStatus</code></td><td>DRAFT · READY · AWAITING_APPROVAL · APPROVED · REJECTED · SENDING · SENT · FAILED · ARCHIVED</td></tr>
+<tr><td><code>PostState</code></td><td>DISCOVERED · EXTRACTED · GENERATED · FAILED · SKIPPED — the agent's per-post progress</td></tr>
+<tr><td><code>SendStatus</code>, <code>SuppressionReason</code></td><td>Per-recipient delivery outcome; why an address is suppressed</td></tr>
+<tr><td><code>Tone</code>, <code>LengthPreset</code>, <code>Audience</code>, <code>Category</code></td><td>Generation controls exposed in the UI</td></tr>
+<tr><td><code>UserRole</code></td><td>ADMIN · EDITOR — settings editing is admin-only</td></tr>
+<tr><td><code>ExtractorTier</code></td><td>Which of the three extractors succeeded — recorded for the 88% measurement</td></tr>
+<tr><td><span class="sig">can_transition(current, target) -&gt; bool</span></td><td>The state machine. Rejects illegal moves.</td></tr>
+<tr><td><span class="sig">allowed_transitions(current) -&gt; frozenset</span></td><td>Used by the UI to decide which buttons to show</td></tr>
+</tbody>
+</table>
+
+<div class="mod">core/auth.py</div>
+<p class="modnote">All password and token cryptography. ~160 lines, deliberately auditable —
+D-15 refused a third-party auth package precisely so this file could be read in full at handover.</p>
+<table class="fnlist">
+<tbody>
+<tr><td><span class="sig">hash_password(password) -&gt; str</span></td><td>bcrypt with a per-password salt</td></tr>
+<tr><td><span class="sig">verify_password(password, hashed) -&gt; bool</span></td><td>Constant-time comparison</td></tr>
+<tr><td><span class="sig">validate_password_strength(password) -&gt; None</span></td><td>Raises with a specific reason; used by <code>create_user</code> and the change-password form</td></tr>
+<tr><td><span class="sig">generate_password() -&gt; str</span></td><td>For admin-created accounts, so no default password ever exists</td></tr>
+<tr><td><span class="sig">sign_session_token(username, role, secret) -&gt; str</span></td><td>HMAC-signed, carries an expiry</td></tr>
+<tr><td><span class="sig">verify_session_token(token, secret) -&gt; dict | None</span></td><td><code>None</code> for forged, tampered <em>or</em> expired — the caller cannot accidentally distinguish them</td></tr>
+</tbody>
+</table>
+
+<div class="mod">core/validators.py &nbsp;·&nbsp; core/schemas.py &nbsp;·&nbsp; core/exceptions.py</div>
+<table class="fnlist">
+<tbody>
+<tr><td><span class="sig">validate_url(url) -&gt; str</span></td><td>Normalises and applies the <b>SSRF guard</b> — see below</td></tr>
+<tr><td><span class="sig">is_public_address(host)</span> · <span class="sig">resolve_public_addresses(host)</span></td>
+    <td>Refuses loopback, link-local, and RFC-1918 ranges. Without this, a pasted URL of
+    <code>http://169.254.169.254/</code> would make the server fetch its own cloud metadata.</td></tr>
+<tr><td><span class="sig">validate_email_address(value) -&gt; str</span></td><td>Used on CSV import and manual entry</td></tr>
+<tr><td><span class="sig">to_strict_schema(model) -&gt; dict</span></td>
+    <td>Pydantic → Groq strict JSON schema. Marks <b>every</b> property required and strips
+    <code>minLength</code>/<code>maxLength</code>, both of which strict mode rejects.</td></tr>
+<tr><td><span class="sig">single_field_schema(field)</span> · <span class="sig">get_schema(name)</span></td><td>For regenerating one field rather than the whole newsletter</td></tr>
+<tr><td><code>NewsletterAppError</code> + 30 subclasses</td>
+    <td>Every error carries a <code>user_message</code> (safe to display) separate from
+    <code>message</code> (for logs). <code>LLMRateLimitedError</code> is distinct from
+    <code>LLMUnavailableError</code> so "busy" and "broken" are handled differently.</td></tr>
+</tbody>
+</table>
+
+<h3>6.2 <code>config/</code></h3>
+<div class="mod">config/settings.py</div>
+<table class="fnlist">
+<tbody>
+<tr><td><code>Settings</code></td><td>Root object with 8 sections: app, logging, llm, email, scraper, database, brand, agent</td></tr>
+<tr><td><span class="sig">get_settings() -&gt; Settings</span></td><td>The accessor everything uses. <b>Call it per operation, never cache the result</b> — live settings edits mutate this object in place, and a cached copy would silently ignore them.</td></tr>
+<tr><td><span class="sig">build_settings(env_file=...) -&gt; Settings</span></td><td>Test seam. Passing <code>None</code> ignores the developer's <code>.env</code>, which is why the suite passes identically in CI.</td></tr>
+<tr><td><span class="sig">Settings.next_send_after(approved_at) -&gt; datetime</span></td><td>The scheduling calculation from §5.2</td></tr>
+<tr><td><span class="sig">Settings.describe_schedule() -&gt; str</span></td><td>Plain-English rendering for the dashboard</td></tr>
+<tr><td><span class="sig">env_var_name(section, field) -&gt; str</span></td><td>Maps a settings field back to its environment variable, for the Settings page</td></tr>
+</tbody>
+</table>
+
+<div class="mod">config/logging_config.py</div>
+<table class="fnlist">
+<tbody>
+<tr><td><span class="sig">configure_logging(level)</span></td><td>One-shot. Console + rotating JSONL file. Detects Windows colour support, because <code>ConsoleRenderer(colors=True)</code> raises <code>SystemError</code> on Windows without colorama.</td></tr>
+<tr><td><span class="sig">set_log_level(level)</span></td><td>Moves <b>only</b> the console handler. The file sink stays at DEBUG deliberately — the forensic trail is what you want after something breaks, and it is no use if it was quiet at the time.</td></tr>
+<tr><td><span class="sig">redact_secrets(...)</span> · <span class="sig">mask_email(...)</span></td><td>Processors that strip API keys and partially mask addresses before anything is written</td></tr>
+<tr><td><span class="sig">new_correlation_id()</span> · <span class="sig">bind_correlation_id(id)</span></td><td>One id threads a whole generation or send through every log line</td></tr>
+</tbody>
+</table>
+
+<h3>6.3 <code>modules/</code> — the capability layer</h3>
+<p class="modnote">Nine packages. Each hides exactly one external thing behind an interface, and
+each interface has a factory. <b>Every swap described in §9 happens inside this layer.</b></p>
+
+<div class="mod">modules/discovery/ — finding blog posts <span style="opacity:.6">(M10)</span></div>
+<table class="fnlist">
+<tbody>
+<tr><td><code>DiscoverySource</code> <span class="sig">(base.py)</span></td><td>The interface: <code>fetch() -&gt; list[DiscoveredPost]</code></td></tr>
+<tr><td><code>WordPressSource</code></td><td>Primary. Calls <code>/wp-json/wp/v2/posts</code>. Preferred because it returns a <b>stable post id</b>, which makes deduplication reliable even if a URL slug changes.</td></tr>
+<tr><td><code>FeedSource</code></td><td>RSS fallback for non-WordPress blogs. Guards against a mis-served HTML page (<code>_reject_doctype</code>) and caps the download at <code>MAX_FEED_BYTES</code>.</td></tr>
+<tr><td><span class="sig">build_sources(settings)</span> · <span class="sig">discover_posts(settings)</span></td><td>The factory and the one call the agent makes. Tries each source in order.</td></tr>
+</tbody>
+</table>
+
+<div class="mod">modules/scraper/ — getting article text</div>
+<table class="fnlist">
+<tbody>
+<tr><td><code>ArticleExtractor</code></td><td>Runs the three tiers in order and records which one won</td></tr>
+<tr><td><code>TrafilaturaExtractor</code></td><td><b>Tier 1</b> — highest published F1. Succeeded on 100% of genuine articles in live measurement.</td></tr>
+<tr><td><code>NewspaperExtractor</code></td><td><b>Tier 2</b> — Newspaper4k</td></tr>
+<tr><td><code>FallbackExtractor</code></td><td><b>Tier 3</b> — BeautifulSoup heuristics. Last resort before the manual-paste message.</td></tr>
+<tr><td><code>ArticleFetcher</code> · <span class="sig">fetch_url(url)</span></td><td>HTTP with a polite user agent, timeouts, retries and a <code>robots.txt</code> check</td></tr>
+</tbody>
+</table>
+<div class="note"><b>Measured, not assumed</b>
+On eight real OEM articles (AWS, Cisco, Dell): 7/8 extracted, all at tier 1. The miss was an
+author-archive page, correctly refused with the manual-paste message. Fortinet's robots.txt
+disallow, a Microsoft 403 and an HPE timeout each produced their intended actionable message.</div>
+
+<div class="mod">modules/cleaner/ — fitting the token budget</div>
+<table class="fnlist">
+<tbody>
+<tr><td><code>TextCleaner</code></td><td>Normalises whitespace and Unicode, removes boilerplate, dedupes repeated blocks</td></tr>
+<tr><td><span class="sig">estimate_tokens(text) -&gt; int</span></td><td><b>Pure-Python heuristic.</b> This is what keeps <code>torch</code> (~2 GB) out of the dependency tree — D-14.</td></tr>
+<tr><td><span class="sig">truncate_to_budget(text, budget) -&gt; TruncationResult</span></td><td>Cuts at a paragraph boundary and reports how much was dropped</td></tr>
+</tbody>
+</table>
+
+<div class="mod">modules/ai/ — generation</div>
+<table class="fnlist">
+<tbody>
+<tr><td><code>LLMProvider</code> <span class="sig">(base.py)</span></td>
+    <td>The seam. <code>complete()</code>, <code>health_check()</code>, and the property
+    <code>supports_guided_json</code>. <b>This interface is why the Colab→Groq migration cost one
+    class and a config default.</b></td></tr>
+<tr><td><code>GroqProvider</code> / <code>HostedProvider</code></td><td>Both thin subclasses of the OpenAI-compatible base; they differ only in defaults</td></tr>
+<tr><td><code>OpenAICompatibleProvider</code></td><td>The real work: strict schema requests, retry with backoff, <code>Retry-After</code> handling, error mapping</td></tr>
+<tr><td><code>MockProvider</code> / <code>FailingMockProvider</code></td><td>Deterministic fixtures. Offline development and most tests. The failing variant provokes each error path.</td></tr>
+<tr><td><code>CircuitBreaker</code></td><td>Opens after N consecutive failures so a dead endpoint fails fast rather than hanging every request; half-opens after a reset interval</td></tr>
+<tr><td><code>AIEngine</code></td><td>The two-stage pipeline: <code>summarise_article()</code> per article, then <code>compose_newsletter()</code> once. Also <code>regenerate_field()</code> and <code>subject_variants()</code>.</td></tr>
+<tr><td><code>PromptRegistry</code> · <span class="sig">get_registry()</span></td><td>Loads versioned YAML, renders Jinja2. <code>render()</code> takes <b>positional-only</b> parameters — a prompt variable named <code>name</code> collided with the method parameter, which is plausible in real use and baffling when it happens.</td></tr>
+<tr><td><span class="sig">create_provider(settings)</span> · <span class="sig">available_providers()</span></td><td>The factory — <b>the single line that decides which LLM you are using</b></td></tr>
+</tbody>
+</table>
+
+<div class="mod">modules/template/ — rendering the email</div>
+<table class="fnlist">
+<tbody>
+<tr><td><code>TemplateRenderer</code></td><td>Jinja2 → HTML → CSS inlining. Enforces compliance at render time: no unsubscribe link or postal address means no output.</td></tr>
+<tr><td><span class="sig">build_plain_text(draft) -&gt; str</span></td><td>Composed from the content fields directly, not converted from HTML — that is how <code>html2text</code> (GPL-3.0) was dropped (D-16), leaving every dependency permissively licensed</td></tr>
+<tr><td><span class="sig">strip_markdown(text)</span> · <span class="sig">apply_merge_tokens(...)</span></td><td>Safety net for stray markdown; per-recipient personalisation tokens</td></tr>
+<tr><td><span class="sig">resolve_brand(settings) -&gt; ResolvedBrand</span></td><td>Name, colour, address, website</td></tr>
+<tr><td><span class="sig">resolve_logo_url(...)</span> · <span class="sig">logo_file(...)</span></td><td>Returns <code>cid:vays-logo</code> for a local file, or passes an <code>http(s)</code> URL through unchanged — so moving to a hosted logo needs no code change</td></tr>
+</tbody>
+</table>
+
+<div class="mod">modules/email/ — delivery</div>
+<table class="fnlist">
+<tbody>
+<tr><td><code>EmailProvider</code> <span class="sig">(base.py)</span></td><td>The seam: <code>send()</code>, <code>send_test()</code>, <code>health_check()</code></td></tr>
+<tr><td><code>BrevoEmailProvider</code></td><td>API provider. 300/day permanent free tier.</td></tr>
+<tr><td><code>SMTPEmailProvider</code></td><td>Gmail and any ordinary SMTP host. Currently in use.</td></tr>
+<tr><td><code>ConsoleEmailProvider</code></td><td>Writes <code>.eml</code> files to <code>data/outbox/</code> and sends nothing. <b>The safe default.</b></td></tr>
+<tr><td><span class="sig">build_mime_body(...)</span></td><td>Builds <code>multipart/related</code> with the logo attached <em>under</em> the HTML alternative. Attaching at the top level instead turns it into an ordinary attachment and the <code>cid:</code> resolves to nothing. Shared by console and SMTP so the preview and the real send cannot drift.</td></tr>
+<tr><td><span class="sig">unsubscribe_headers(...)</span></td><td><code>List-Unsubscribe</code> — deliverability, not decoration</td></tr>
+<tr><td><code>BatchSender</code></td><td>Batches, paces, retries per recipient</td></tr>
+<tr><td><span class="sig">create_email_provider(settings)</span></td><td>The factory — <b>the single line that decides how mail leaves</b></td></tr>
+</tbody>
+</table>
+
+<div class="mod">modules/repository/ — persistence</div>
+<table class="fnlist">
+<tbody>
+<tr><td><code>Base</code> + 12 ORM classes</td><td><code>orm_models.py</code> — the whole schema in one readable file</td></tr>
+<tr><td><span class="sig">unit_of_work()</span></td><td>Context manager: commit on success, rollback on exception. <b>Every write goes through this.</b></td></tr>
+<tr><td><span class="sig">init_database()</span> · <span class="sig">get_engine()</span></td><td>Sets WAL mode and <code>foreign_keys=ON</code> — both verified live, both off by default in SQLite</td></tr>
+<tr><td><code>CampaignRepository</code></td><td>Includes <code>begin_send()</code>, the conditional UPDATE that is guard 2</td></tr>
+<tr><td><code>DiscoveredPostRepository</code> · <span class="sig">dedupe_key(post)</span></td><td>Prefers <code>external_id</code> over URL. A <b>unique constraint</b> is the duplicate guarantee — application logic is the optimisation, not the guarantee.</td></tr>
+<tr><td><code>SubscriberRepository</code></td><td>The master mailing list. Import appends; removal deactivates rather than deletes, so history stays intact.</td></tr>
+<tr><td><code>ArticleRepository</code> · <span class="sig">url_fingerprint(url)</span></td><td>Article dedupe by normalised URL</td></tr>
+<tr><td><code>RecipientRepository</code> / <code>SuppressionRepository</code></td><td>Per-campaign recipients; the permanent unsubscribe list</td></tr>
+<tr><td><code>SendRepository</code>, <code>LogRepository</code>, <code>SettingsRepository</code>, <code>UserRepository</code></td><td>Delivery records; app logs with pruning; the settings override table; accounts</td></tr>
+<tr><td><code>DatabaseLogHandler</code> · <span class="sig">attach_db_log_handler()</span></td>
+    <td>Feeds the Logs page. A write failure <b>disables the handler</b> rather than raising on
+    every subsequent log line — an unreachable database would otherwise turn one problem into a
+    storm. Lives here, not in <code>config/</code>, because <code>config</code> cannot import the
+    repository without a cycle.</td></tr>
+</tbody>
+</table>
+
+<div class="mod">modules/tunnel.py — public URLs</div>
+<table class="fnlist">
+<tbody>
+<tr><td><span class="sig">detect_ngrok_url() -&gt; str | None</span></td><td>Queries the local ngrok agent API at <code>127.0.0.1:4040</code></td></tr>
+<tr><td><span class="sig">resolve_base_url(settings) -&gt; str</span></td><td>The decision: an explicit <code>AGENT_APP_BASE_URL</code> wins; <code>auto</code> tries ngrok; otherwise localhost. <b>Setting a real domain here is the entire production migration for approval links.</b></td></tr>
+<tr><td><span class="sig">local_url(settings) -&gt; str</span></td><td><code>http://localhost:{APP_PORT}</code></td></tr>
+</tbody>
+</table>
+
+<h3>6.4 <code>services/</code> — orchestration</h3>
+<p class="modnote">One service per workflow. No Streamlit imports anywhere in this directory —
+enforced by an import-linter contract, and the reason <code>agent_worker.py</code> can drive the
+same code with no UI present.</p>
+
+<div class="mod">services/agent_service.py — the automation orchestrator</div>
+<table class="fnlist">
+<tbody>
+<tr><td><span class="sig">AgentService.run() -&gt; int</span></td>
+    <td>One discovery cycle: the in-flight check, then discover → record → extract → clean →
+    generate → request approval. Returns how many campaigns it created.</td></tr>
+<tr><td><code>AgentRunReport</code></td><td>Structured outcome — discovered, skipped, generated, failed, <code>holding</code> — surfaced on the dashboard</td></tr>
+<tr><td><span class="sig">_in_flight() -&gt; int</span></td><td>Counts campaigns not yet sent. The value compared against <code>max_in_flight</code>; see §5.3.</td></tr>
+</tbody>
+</table>
+
+<div class="mod">services/approval_service.py</div>
+<table class="fnlist">
+<tbody>
+<tr><td><span class="sig">ApprovalService.issue(campaign_id) -&gt; ApprovalLink</span></td><td>Mints a token, stores its hash, returns the raw link</td></tr>
+<tr><td><span class="sig">.check(token) -&gt; TokenCheck</span></td><td>Validates without consuming — used to render the review page</td></tr>
+<tr><td><span class="sig">.approve(token)</span> · <span class="sig">.reject(token)</span></td><td>Consume the token and move the campaign. Sets <code>approved_at</code> in <b>UTC</b>.</td></tr>
+<tr><td><code>ApprovalNotifier</code></td><td>Renders <code>templates/internal/approval_request.html</code> and sends it via the ordinary email provider</td></tr>
+<tr><td><span class="sig">review_url(token, settings) -&gt; str</span></td><td>Built on <code>resolve_base_url()</code>, so it follows ngrok or a real domain automatically</td></tr>
+</tbody>
+</table>
+<div class="warn"><b>UTC invariant</b>
+<code>approved_at</code> is stored and compared in UTC. SQLite returns naive datetimes, so
+<code>_as_utc()</code> normalises on read. Without it every expiry comparison raised
+<code>TypeError: can't compare offset-naive and offset-aware datetimes</code> — which would have
+broken <em>every</em> approval click. Preserve this if you touch the file.</div>
+
+<div class="mod">services/dispatch_service.py — the send gate</div>
+<table class="fnlist">
+<tbody>
+<tr><td><span class="sig">DispatchService.run() -&gt; DispatchReport</span></td><td>Finds due campaigns and sends them</td></tr>
+<tr><td><span class="sig">.due() -&gt; list[DueCampaign]</span></td><td>The gate, in one condition: <code>status == APPROVED</code> <b>and</b> <code>now &gt;= next_send_after(approved_at)</code></td></tr>
+</tbody>
+</table>
+
+<div class="mod">Other services</div>
+<table class="fnlist">
+<thead><tr><th style="width:28%">Service</th><th>Responsibility</th></tr></thead>
+<tbody>
+<tr><td><code>GenerationService</code></td><td>The orchestrator every generation flows through — manual and automated alike. <b>100% test coverage</b>, via a stub engine so each failure mode can be provoked directly.</td></tr>
+<tr><td><code>DeliveryService</code></td><td>The four guards, then <code>BatchSender</code>. Largest service (470 lines) because the failure handling is the point.</td></tr>
+<tr><td><code>IngestionService</code></td><td>URLs → extracted, cleaned, persisted articles. Per-URL results so one bad link does not fail the batch.</td></tr>
+<tr><td><code>CampaignService</code></td><td>Draft lifecycle, state transitions, history</td></tr>
+<tr><td><code>SubscriberService</code> · <span class="sig">parse_pasted_addresses()</span></td><td>The master list: CSV import with an <code>ImportReport</code>, paste-a-list, deactivation</td></tr>
+<tr><td><code>RecipientSource</code> · <span class="sig">recipients_dir()</span> · <span class="sig">latest_csv()</span></td><td>Resolves who a campaign goes to — the subscriber table, or a CSV drop directory</td></tr>
+<tr><td><code>SettingsService</code></td><td>The 43-entry editable registry, validation, persistence, revert. See §8.</td></tr>
+<tr><td><code>AuthService</code></td><td>Login, lockout counting, user CRUD, <code>set_password()</code>. Self-deactivation is refused, not warned about — the only admin locking themselves out has no way back in.</td></tr>
+<tr><td><code>HealthService</code></td><td>Real probes against the LLM and email providers. One cached instance shared by the sidebar and the dashboard panel, so they cannot disagree.</td></tr>
+<tr><td><code>agent_status</code> <span class="sig">record() / current()</span></td><td>Worker heartbeat — the dashboard shows "worker last seen", which is how you tell the worker is not running</td></tr>
+</tbody>
+</table>
+
+<h3>6.5 <code>ui/</code> — Streamlit</h3>
+<table class="fnlist">
+<thead><tr><th style="width:26%">Page</th><th>Does</th></tr></thead>
+<tbody>
+<tr><td><b>Dashboard</b> <span class="sig">ui/pages/dashboard.py</span></td><td>Health, agent status and next send time, recent campaigns with a working <b>Open</b> button (sets the draft id, then <code>st.switch_page("preview")</code>)</td></tr>
+<tr><td><b>Generate Newsletter</b></td><td>Paste URLs → ingest → set tone/length/audience → generate</td></tr>
+<tr><td><b>Campaign Preview</b></td><td>Edit every field, regenerate one field, subject variants, live HTML preview, send</td></tr>
+<tr><td><b>Approvals</b></td><td>The page an approval link opens; also lists campaigns awaiting approval for in-app action</td></tr>
+<tr><td><b>Recipients</b></td><td>The master list — CSV upload, paste, remove, counts</td></tr>
+<tr><td><b>Campaign History</b></td><td>Past campaigns, per-recipient delivery outcomes, retry-failed</td></tr>
+<tr><td><b>Settings</b></td><td>The 43 editable settings, Test Connection buttons, revert. Admin-only.</td></tr>
+<tr><td><b>Logs</b></td><td>Searchable <code>app_logs</code> with level and correlation-id filters</td></tr>
+</tbody>
+</table>
+<table class="fnlist">
+<thead><tr><th style="width:26%">Support module</th><th>Public surface</th></tr></thead>
+<tbody>
+<tr><td><code>ui/state.py</code></td><td><span class="sig">current_user()</span>, <span class="sig">set_current_user()</span>, <span class="sig">is_authenticated()</span>, <span class="sig">logout()</span>, <span class="sig">health_service()</span> — typed access to <code>st.session_state</code> with the keys in one place</td></tr>
+<tr><td><code>ui/session.py</code></td><td><span class="sig">remember()</span>, <span class="sig">forget()</span>, <span class="sig">stored_token()</span>, <span class="sig">restore()</span> — cookie-backed persistence so a refresh does not log you out. See §12.3.</td></tr>
+<tr><td><code>ui/styles.py</code></td><td><span class="sig">inject()</span>, <span class="sig">status_chip()</span>, <span class="sig">health_dot()</span>, <span class="sig">dashboard_logo()</span> — the LUNA palette lives here as constants</td></tr>
+<tr><td><code>ui/components.py</code></td><td>10 shared widgets: metric cards, error panels, empty states, character counters, the send confirmation, provenance cards</td></tr>
+</tbody>
+</table>
+
+<h2 id="s7"><span class="num">7</span>Data model</h2>
+
+<p class="lede">Twelve tables, five Alembic migrations. SQLite in WAL mode with
+<code>foreign_keys=ON</code> — both set explicitly at connect time, because SQLite defaults to
+neither.</p>
+
+<figure>
+<svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="9">
+  <g font-size="8.2">
+    <rect x="14" y="14" width="150" height="56" rx="5" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.3"/>
+    <text x="24" y="30" fill="#023859" font-weight="700" font-size="9">discovered_posts</text>
+    <text x="24" y="44" fill="#43606F">url · external_id · state</text>
+    <text x="24" y="56" fill="#C43B47" font-size="7.4">UNIQUE(dedupe_key)</text>
+    <text x="24" y="66" fill="#6B8494" font-size="7">what the agent has seen</text>
+
+    <rect x="194" y="14" width="150" height="56" rx="5" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.3"/>
+    <text x="204" y="30" fill="#023859" font-weight="700" font-size="9">articles</text>
+    <text x="204" y="44" fill="#43606F">url · title · text · tier</text>
+    <text x="204" y="56" fill="#6B8494" font-size="7">extracted source content</text>
+
+    <rect x="374" y="14" width="170" height="70" rx="5" fill="#023859"/>
+    <text x="384" y="30" fill="#fff" font-weight="700" font-size="9">campaigns</text>
+    <text x="384" y="44" fill="#A7EBF2">status · subject · body</text>
+    <text x="384" y="56" fill="#A7EBF2">prompt_version · model</text>
+    <text x="384" y="68" fill="#A7EBF2">approved_at (UTC)</text>
+    <text x="384" y="79" fill="#8FBDD1" font-size="7">the centre of the schema</text>
+
+    <rect x="574" y="14" width="112" height="56" rx="5" fill="#FDF2DE" stroke="#E0A22C" stroke-width="1.3"/>
+    <text x="584" y="30" fill="#8A5E08" font-weight="700" font-size="9">approval_tokens</text>
+    <text x="584" y="44" fill="#6B5410">sha256 · expires_at</text>
+    <text x="584" y="56" fill="#6B5410">used_at</text>
+
+    <rect x="194" y="110" width="150" height="44" rx="5" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.3"/>
+    <text x="204" y="126" fill="#023859" font-weight="700" font-size="9">campaign_articles</text>
+    <text x="204" y="140" fill="#6B8494" font-size="7.4">join — which sources fed which campaign</text>
+
+    <rect x="374" y="110" width="170" height="44" rx="5" fill="#E9F4F8" stroke="#54ACBF" stroke-width="1.3"/>
+    <text x="384" y="126" fill="#023859" font-weight="700" font-size="9">recipients</text>
+    <text x="384" y="140" fill="#6B8494" font-size="7.4">per-campaign snapshot of the list</text>
+
+    <rect x="374" y="172" width="170" height="44" rx="5" fill="#DEF3EC" stroke="#0E8F6F" stroke-width="1.3"/>
+    <text x="384" y="188" fill="#0A6B53" font-weight="700" font-size="9">send_records</text>
+    <text x="384" y="202" fill="#0A6B53" font-size="7.4">one row per address per send · status</text>
+
+    <rect x="574" y="110" width="112" height="44" rx="5" fill="#FDF3F4" stroke="#C43B47" stroke-width="1.3"/>
+    <text x="584" y="126" fill="#C43B47" font-weight="700" font-size="9">suppressions</text>
+    <text x="584" y="140" fill="#8B2E37" font-size="7.4">permanent unsubscribes</text>
+
+    <rect x="14" y="110" width="150" height="44" rx="5" fill="#54ACBF" stroke="#26658C"/>
+    <text x="24" y="126" fill="#fff" font-weight="700" font-size="9">subscribers</text>
+    <text x="24" y="140" fill="#012F4A" font-size="7.4">the master mailing list · active flag</text>
+
+    <rect x="14" y="240" width="150" height="42" rx="5" fill="#F3F9FB" stroke="#D6E4EB"/>
+    <text x="24" y="256" fill="#023859" font-weight="700" font-size="9">users</text>
+    <text x="24" y="270" fill="#6B8494" font-size="7.4">bcrypt hash · role · active</text>
+
+    <rect x="194" y="240" width="150" height="42" rx="5" fill="#F3F9FB" stroke="#D6E4EB"/>
+    <text x="204" y="256" fill="#023859" font-weight="700" font-size="9">settings</text>
+    <text x="204" y="270" fill="#6B8494" font-size="7.4">runtime overrides — never secrets</text>
+
+    <rect x="374" y="240" width="170" height="42" rx="5" fill="#F3F9FB" stroke="#D6E4EB"/>
+    <text x="384" y="256" fill="#023859" font-weight="700" font-size="9">app_logs</text>
+    <text x="384" y="270" fill="#6B8494" font-size="7.4">structured, pruned at startup</text>
+  </g>
+
+  <g stroke="#26658C" stroke-width="1.2" fill="none">
+    <path d="M344 42 L370 42"/>
+    <path d="M164 42 L190 42"/>
+    <path d="M544 42 L570 42"/>
+    <path d="M269 70 L269 106"/>
+    <path d="M374 60 L356 60 L356 128 L340 128" />
+    <path d="M459 84 L459 106"/>
+    <path d="M459 154 L459 168"/>
+    <path d="M164 132 L190 132 M344 132 L370 132"/>
+    <path d="M574 132 L556 132 L556 194 L548 194" stroke-dasharray="3,3" stroke="#C43B47"/>
+  </g>
+  <text x="560" y="168" fill="#C43B47" font-size="7">checked before every send</text>
+</svg>
+<figcaption><b>Figure 10 — Schema.</b> <code>campaigns</code> is the centre. Note that
+<code>recipients</code> is a per-campaign <em>snapshot</em>, separate from
+<code>subscribers</code> (the living master list) — so history shows who a campaign actually went
+to, even after the list changes.</figcaption>
+</figure>
+
+<table>
+<thead><tr><th style="width:20%">Table</th><th>Purpose and the one thing worth knowing</th></tr></thead>
+<tbody>
+<tr><td><code>campaigns</code></td><td>Records <code>prompt_version</code> and <code>model</code> on every row, so any output is reproducible — D-6</td></tr>
+<tr><td><code>articles</code></td><td>Deduped by normalised-URL fingerprint; stores which extractor tier succeeded</td></tr>
+<tr><td><code>campaign_articles</code></td><td>Many-to-many, which is what makes the provenance panel possible</td></tr>
+<tr><td><code>discovered_posts</code></td><td>The agent's memory. <b>Clearing this table makes the agent re-process old posts</b> — see §10.5.</td></tr>
+<tr><td><code>approval_tokens</code></td><td>Hash only. Never the raw token.</td></tr>
+<tr><td><code>subscribers</code></td><td>Removal sets <code>active = false</code>; the row survives so past sends still resolve</td></tr>
+<tr><td><code>recipients</code></td><td>Per-campaign snapshot</td></tr>
+<tr><td><code>send_records</code></td><td>One row per address per send. This is what makes "retry failed only" possible without re-mailing successes.</td></tr>
+<tr><td><code>suppressions</code></td><td>Permanent. Checked in bulk before every send, so an unsubscribe survives a re-uploaded CSV.</td></tr>
+<tr><td><code>settings</code></td><td>Runtime overrides on top of <code>.env</code>. A <code>SecretStr</code> field cannot reach it — §8.2.</td></tr>
+<tr><td><code>users</code></td><td>bcrypt hashes. No default account and no default password exist anywhere in the codebase.</td></tr>
+<tr><td><code>app_logs</code></td><td>Feeds the Logs page. Pruned at startup so it cannot grow without bound.</td></tr>
+</tbody>
+</table>
+
+<h4>Migrations</h4>
+<pre>alembic upgrade head          <span class="c"># apply everything (this is what run.bat checks)</span>
+alembic revision --autogenerate -m "add x"   <span class="c"># then READ the generated file before applying</span>
+alembic downgrade -1          <span class="c"># step back one</span>
+alembic current               <span class="c"># what the database is on now</span></pre>
+<div class="note"><b>SQLite and ALTER TABLE</b>
+SQLite cannot drop or alter a column in place; Alembic emulates it by rebuilding the table.
+Autogenerate handles the common cases, but always read the generated migration before running it
+against a database with real campaign history — and take a copy of <code>data/newsletter.db</code>
+first. It is one file; copying it is the entire backup procedure.</div>
+
+<h2 id="s8"><span class="num">8</span>Configuration</h2>
+
+<h3>8.1 Two layers (D-24)</h3>
+<p>Configuration has a bottom layer and a top layer, and both matter for different reasons.</p>
+
+<figure>
+<svg viewBox="0 0 700 190" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Arial" font-size="10">
+  <defs><marker id="g1" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
+    <polygon points="0 0, 9 3.5, 0 7" fill="#26658C"/></marker></defs>
+
+  <rect x="20" y="16" width="300" height="52" rx="6" fill="#54ACBF" stroke="#26658C" stroke-width="1.4"/>
+  <text x="34" y="36" fill="#fff" font-weight="700" font-size="10">Layer 2 — settings table</text>
+  <text x="34" y="50" fill="#012F4A" font-size="8.4">edited in the dashboard · takes effect immediately</text>
+  <text x="34" y="62" fill="#012F4A" font-size="8.4">43 fields · "Revert" restores the file value</text>
+
+  <rect x="20" y="88" width="300" height="52" rx="6" fill="#023859"/>
+  <text x="34" y="108" fill="#fff" font-weight="700" font-size="10">Layer 1 — .env file</text>
+  <text x="34" y="122" fill="#A7EBF2" font-size="8.4">the source of truth for a fresh install</text>
+  <text x="34" y="134" fill="#A7EBF2" font-size="8.4">the only place secrets ever live</text>
+
+  <path d="M170 88 L170 74" stroke="#26658C" stroke-width="1.6" marker-end="url(#g1)"/>
+  <text x="182" y="82" fill="#26658C" font-size="7.6">overrides</text>
+
+  <rect x="352" y="16" width="330" height="124" rx="6" fill="#F3F9FB" stroke="#D6E4EB"/>
+  <text x="366" y="36" fill="#023859" font-weight="700" font-size="9.5">Why keep both</text>
+  <text x="366" y="54" fill="#43606F" font-size="8.4">A handover is still configured by a file in Git —</text>
+  <text x="366" y="66" fill="#43606F" font-size="8.4">the next developer reads <tspan font-family="Consolas" font-size="8">.env.example</tspan> and knows</text>
+  <text x="366" y="78" fill="#43606F" font-size="8.4">everything the system needs.</text>
+  <text x="366" y="98" fill="#43606F" font-size="8.4">But day-to-day changes — a schedule, a sender</text>
+  <text x="366" y="110" fill="#43606F" font-size="8.4">name, a log level — do not need a file edit,</text>
+  <text x="366" y="122" fill="#43606F" font-size="8.4">a terminal, or a restart.</text>
+
+  <text x="20" y="166" fill="#C43B47" font-weight="700" font-size="8.6">Secrets never reach Layer 2 — and that is enforced by a mechanism, not a rule. See §8.2.</text>
+  <text x="20" y="180" fill="#6B8494" font-size="8">Startup order: overrides are applied BEFORE configure_logging(), because the log level is one of them.</text>
+</svg>
+<figcaption><b>Figure 11 — The two configuration layers.</b> A saved value that no longer validates
+is logged and skipped, never fatal. Refusing to boot over a value that can only be fixed in the UI
+you just prevented from loading is a trap with no exit.</figcaption>
+</figure>
+
+<h3>8.2 The secret rule, as a mechanism</h3>
+<p><code>SettingsService._validate_registry()</code> runs <b>at import time</b> and raises if any
+registered field is a <code>SecretStr</code>. Adding <code>llm.api_key</code> to the editable
+registry therefore fails the build, not code review. That converts D-19 ("secrets stay in
+<code>.env</code>") from a convention a future developer could break into an invariant they
+cannot.</p>
+<p>Three further properties make live editing safe rather than merely convenient:</p>
+<ul>
+<li><b><code>validate_assignment=True</code></b> on every settings section, so an edit runs the same
+validators as startup. A rejected value leaves the old one in place — the app is never left
+holding a config it could not have booted with. Verified: <code>temperature=99</code> is refused
+and 0.7 survives.</li>
+<li><b>The stored value is the normalised one</b>, read back off the model after assignment.
+<code>https://host/v1/</code> persists as <code>https://host</code>. Storing raw input would leave
+the database and the running process disagreeing about the endpoint — on this page of all pages.</li>
+<li><b>Live mutation, not a rebuild.</b> Every holder of <code>get_settings()</code> sees the
+change because the object is mutated in place. This only works because factories call
+<code>get_settings()</code> per operation instead of caching a provider — an invariant of
+<em>other</em> modules, so a test class asserts it. If someone later caches a provider, those
+tests fail rather than the feature silently doing nothing.</li>
+</ul>
+
+<h3>8.3 Environment variables</h3>
+<table>
+<thead><tr><th style="width:30%">Variable</th><th style="width:14%">Default</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td colspan="3" style="background:var(--wash2);font-weight:700;color:var(--luna-dark)">Application</td></tr>
+<tr><td><code>APP_ENV</code></td><td>dev</td><td>dev · prod</td></tr>
+<tr><td><code>APP_SECRET_KEY</code></td><td><i>required</i></td><td><span class="pill p-no">secret</span> Signs session tokens. Generate with <code>secrets.token_urlsafe(48)</code>. Changing it logs everyone out.</td></tr>
+<tr><td><code>APP_PORT</code></td><td>8501</td><td>Used to build localhost links</td></tr>
+<tr><td><code>LOG_LEVEL</code></td><td>INFO</td><td>Console only; the file sink stays at DEBUG</td></tr>
+<tr><td><code>DATABASE_URL</code></td><td>sqlite:///data/newsletter.db</td><td>Any SQLAlchemy URL — see §9.5</td></tr>
+<tr><td colspan="3" style="background:var(--wash2);font-weight:700;color:var(--luna-dark)">LLM</td></tr>
+<tr><td><code>LLM_PROVIDER</code></td><td>groq</td><td><code>groq</code> · <code>hosted</code> · <code>mock</code>. <code>colab</code> now fails at startup by design.</td></tr>
+<tr><td><code>GROQ_API_KEY</code></td><td><i>required</i></td><td><span class="pill p-no">secret</span> Starts <code>gsk_</code>. CI greps full git history for this prefix.</td></tr>
+<tr><td><code>LLM_MODEL</code></td><td>openai/gpt-oss-120b</td><td>Apache 2.0 open-weight despite the name — see §9.1</td></tr>
+<tr><td><code>LLM_BASE_URL</code></td><td>https://api.groq.com</td><td>Normalised on save; trailing <code>/v1/</code> is stripped</td></tr>
+<tr><td><code>LLM_MAX_TOKENS</code></td><td>2048</td><td><b>Must be ≥ 2048 for structured output.</b> See the warning below.</td></tr>
+<tr><td><code>LLM_TEMPERATURE</code></td><td>0.85</td><td>Raised from 0.7 for a less machine-like voice; the banned-construction list keeps the variance in check</td></tr>
+<tr><td><code>LLM_TIMEOUT_S</code> · <code>LLM_MAX_RETRIES</code></td><td>60 · 3</td><td></td></tr>
+<tr><td><code>LLM_CIRCUIT_FAILURE_THRESHOLD</code> · <code>LLM_CIRCUIT_RESET_S</code></td><td>5 · 60</td><td>Circuit breaker</td></tr>
+<tr><td colspan="3" style="background:var(--wash2);font-weight:700;color:var(--luna-dark)">Email</td></tr>
+<tr><td><code>EMAIL_PROVIDER</code></td><td>console</td><td><code>console</code> · <code>smtp</code> · <code>brevo</code>. <b>console sends nothing</b> — the safe default.</td></tr>
+<tr><td><code>EMAIL_SENDER_NAME</code> · <code>EMAIL_SENDER_ADDRESS</code> · <code>EMAIL_REPLY_TO</code></td><td>—</td><td>The From/Reply-To identity</td></tr>
+<tr><td><code>EMAIL_BATCH_SIZE</code> · <code>EMAIL_BATCH_DELAY_S</code> · <code>EMAIL_MAX_RETRIES</code></td><td>50 · 1 · 3</td><td>Pacing, to stay inside provider limits</td></tr>
+<tr><td><code>BREVO_API_KEY</code></td><td>—</td><td><span class="pill p-no">secret</span> Starts <code>xkeysib-</code></td></tr>
+<tr><td><code>SMTP_HOST</code> · <code>SMTP_PORT</code> · <code>SMTP_USERNAME</code> · <code>SMTP_USE_TLS</code></td><td>— · 587 · — · true</td><td>Gmail: <code>smtp.gmail.com</code>, 587, TLS on</td></tr>
+<tr><td><code>SMTP_PASSWORD</code></td><td>—</td><td><span class="pill p-no">secret</span> For Gmail this is a 16-character <b>App Password</b>, not the account password</td></tr>
+<tr><td colspan="3" style="background:var(--wash2);font-weight:700;color:var(--luna-dark)">Agent (M10)</td></tr>
+<tr><td><code>AGENT_ENABLED</code></td><td>false</td><td>Master switch. The worker exits immediately when false.</td></tr>
+<tr><td><code>AGENT_BLOG_URL</code></td><td>https://vaysinfotech.com</td><td>Discovery target</td></tr>
+<tr><td><code>AGENT_DISCOVERY_INTERVAL_HOURS</code></td><td>6</td><td>1–168. Does <b>not</b> control send frequency.</td></tr>
+<tr><td><code>AGENT_MAX_IN_FLIGHT</code></td><td>1</td><td><b>This is what enforces one newsletter per month.</b> §5.3.</td></tr>
+<tr><td><code>AGENT_MAX_POSTS_PER_RUN</code></td><td>1</td><td>Per-run cap; not sufficient alone</td></tr>
+<tr><td><code>AGENT_SEND_SCHEDULE</code></td><td>monthly</td><td>monthly · daily</td></tr>
+<tr><td><code>AGENT_SEND_WEEKDAY</code> · <code>AGENT_SEND_WEEK_OF_MONTH</code> · <code>AGENT_SEND_TIME</code></td><td>wednesday · 3 · 11:00</td><td>Anchored <code>HH:MM</code> regex — <code>9:00</code> is rejected, <code>09:00</code> is correct</td></tr>
+<tr><td><code>AGENT_TIMEZONE</code></td><td>Asia/Kolkata</td><td>IANA name</td></tr>
+<tr><td><code>AGENT_APPROVAL_EMAIL</code></td><td>—</td><td>Where the approval request goes</td></tr>
+<tr><td><code>AGENT_APPROVAL_TOKEN_TTL_HOURS</code></td><td>72</td><td>1–720</td></tr>
+<tr><td><code>AGENT_APP_BASE_URL</code></td><td>auto</td><td><code>auto</code> → try ngrok, else localhost. <b>Set a real domain here in production.</b></td></tr>
+<tr><td><code>AGENT_RECIPIENTS_DIR</code></td><td>data/recipients</td><td>CSV drop directory</td></tr>
+<tr><td><code>NGROK_DOMAIN</code></td><td>—</td><td>A reserved ngrok domain, if you have claimed one</td></tr>
+<tr><td colspan="3" style="background:var(--wash2);font-weight:700;color:var(--luna-dark)">Brand &amp; scraping</td></tr>
+<tr><td><code>BRAND_NAME</code> · <code>BRAND_PRIMARY_COLOR</code> · <code>BRAND_WEBSITE</code></td><td>Vays Infotech · #54ACBF · —</td><td>Rendered into every template</td></tr>
+<tr><td><code>BRAND_LOGO_PATH</code></td><td>assets/logo.png</td><td>Local file → CID-embedded. An <code>http(s)</code> URL is passed through unchanged.</td></tr>
+<tr><td><code>BRAND_ADDRESS</code></td><td><i>required to send</i></td><td>Postal address — guard 4 refuses to render without it</td></tr>
+<tr><td><code>UNSUBSCRIBE_BASE_URL</code></td><td>—</td><td>Also required by guard 4</td></tr>
+<tr><td><code>SCRAPER_MAX_INPUT_TOKENS</code></td><td>3000</td><td>Cut from 6000 because of the Groq free-tier TPM ceiling — risk C-8</td></tr>
+<tr><td><code>SCRAPER_TIMEOUT_S</code> · <code>SCRAPER_MAX_RETRIES</code> · <code>SCRAPER_MAX_CONCURRENT</code></td><td>20 · 2 · 3</td><td></td></tr>
+<tr><td><code>SCRAPER_RESPECT_ROBOTS</code></td><td>true</td><td>Leave it true</td></tr>
+<tr><td><code>SCRAPER_MIN_WORD_COUNT</code></td><td>150</td><td>Below this, extraction is treated as failed</td></tr>
+<tr><td><code>SCRAPER_USER_AGENT</code></td><td>identifying UA</td><td>Polite and identifiable, not a browser impersonation</td></tr>
+</tbody>
+</table>
+
+<div class="warn"><b><code>LLM_MAX_TOKENS</code> must be ≥ 2048</b>
+<code>gpt-oss</code> emits internal reasoning tokens that count against the budget but never appear
+in the response. A budget sized to the visible output is cut off mid-JSON, and <b>Groq reports
+that as a 400 <code>json_validate_failed</code>, not <code>finish_reason: length</code></b> — so
+the token-budget error path never fires and the failure looks like a schema problem.
+<code>scripts/validate_prompts.py</code> enforces the floor. This cost real debugging time; do
+not lower it.</div>
+
+<h2 id="s9"><span class="num">9</span>Swapping things out</h2>
+
+<p class="lede">Everything below was designed to be replaceable, and most of these have already been
+done once for real. Each entry gives the reason you would do it, the exact steps, and what to run
+afterwards to know it worked.</p>
+
+<div class="swap">
+<span class="eff">1 config line</span>
+<h3>9.1 The LLM model</h3>
+<p class="why"><b>Why:</b> cost, quality, a faster model, or replacing <code>gpt-oss-120b</code>
+if Groq retires it.</p>
+<pre>LLM_MODEL=openai/gpt-oss-20b     <span class="c"># smaller, faster, cheaper on TPM</span>
+<span class="c"># or a Qwen / Llama model Groq serves</span></pre>
+<p><b>The one trade-off.</b> Only the <code>gpt-oss</code> family supports <code>strict: true</code>
+schema enforcement, which is what makes D-3 a guarantee rather than a hope. Switching to a Qwen or
+Llama model still works — <code>supports_guided_json</code> becomes <code>False</code> and the
+provider falls back to a repair-retry loop — but JSON validity becomes probabilistic instead of
+guaranteed. Weigh that before switching.</p>
+<p><b>Verify:</b> Settings → Test Connection (expect healthy plus a latency figure), then generate
+one real newsletter and confirm it validates on the first attempt.</p>
+</div>
+
+<div class="swap">
+<span class="eff">1 class + 1 default</span>
+<h3>9.2 The LLM host</h3>
+<p class="why"><b>Why:</b> moving off Groq entirely — to Together, Fireworks, an internal vLLM
+server, or anything OpenAI-compatible.</p>
+<ol>
+<li>If it is OpenAI-compatible, set <code>LLM_PROVIDER=hosted</code> and point
+<code>LLM_BASE_URL</code> at it. <b>No code at all.</b></li>
+<li>If it is not, add a class in <code>modules/ai/</code> implementing <code>LLMProvider</code>
+(three members: <code>complete()</code>, <code>health_check()</code>,
+<code>supports_guided_json</code>), then register it in
+<code>modules/ai/factory.py::create_provider()</code>.</li>
+<li>Add the literal to <code>LLMSettings.provider</code> in <code>config/settings.py</code>.</li>
+</ol>
+<p><b>This has been done for real.</b> The Colab→Groq migration (D-21) cost exactly one class and
+one config default — no service, page, or test outside <code>modules/ai/</code> changed. That is
+the strongest evidence the seam is real.</p>
+<p><b>Verify:</b> <code>pytest tests/unit/test_ai_providers.py</code>, then Test Connection, then
+one live generation.</p>
+</div>
+
+<div class="swap">
+<span class="eff">1 config line</span>
+<h3>9.3 The email provider</h3>
+<p class="why"><b>Why:</b> Gmail's ~500/day limit, moving to a real ESP, or going quiet for
+testing.</p>
+<table class="kv">
+<tbody>
+<tr><td><code>console</code></td><td>Writes <code>.eml</code> to <code>data/outbox/</code>. Sends nothing. Use for any test.</td></tr>
+<tr><td><code>smtp</code></td><td>Gmail or any SMTP host. Gmail needs an <b>App Password</b>, not the account password.</td></tr>
+<tr><td><code>brevo</code></td><td>API. 300/day permanent free tier; combines transactional and marketing.</td></tr>
+</tbody>
+</table>
+<p>For a provider that is none of these: implement <code>EmailProvider</code> in
+<code>modules/email/</code> and register it in <code>create_email_provider()</code>. Reuse
+<code>build_mime_body()</code> so the CID logo keeps working.</p>
+<div class="warn"><b>Assert the provider in any script that can send</b>
+A script of mine assumed <code>EMAIL_PROVIDER=console</code> without checking. <code>.env</code>
+had been switched to <code>smtp</code>, so three "preview" calls went to Gmail for real. The
+address was RFC-2606 undeliverable so nobody received anything, but it consumed quota and
+generated bounces. Every send-capable script now asserts the provider first. Keep that habit.</div>
+</div>
+
+<div class="swap">
+<span class="eff">new HTML file</span>
+<h3>9.4 Email templates</h3>
+<p class="why"><b>Why:</b> a rebrand, a new layout, or a seasonal variant.</p>
+<ol>
+<li>Copy <code>templates/email/classic.html</code> to a new name in the <b>same directory</b>.</li>
+<li>Keep the Jinja2 variables and the compliance block — the unsubscribe link and postal
+address are what guard 4 checks for. Removing them means the template can never send.</li>
+<li>Use table-based layout with inline-safe CSS. Node is not installed, so MJML was dropped
+(D-23); hand-authored table HTML is the source of truth.</li>
+<li>It appears in the Preview page picker automatically — the picker lists the directory.</li>
+</ol>
+<div class="warn"><b>Do not put non-newsletter templates in <code>templates/email/</code></b>
+<code>approval_request.html</code> was placed there and, sorting before <code>classic</code>,
+silently became the <em>default</em> newsletter template and broke the Preview page. Internal
+templates live in <code>templates/internal/</code> for exactly this reason.</div>
+</div>
+
+<div class="swap">
+<span class="eff">1 URL + driver</span>
+<h3>9.5 The database</h3>
+<p class="why"><b>Why:</b> more than one concurrent writer, a hosted deployment, or backup
+requirements SQLite cannot meet.</p>
+<pre>pip install psycopg[binary]
+DATABASE_URL=postgresql+psycopg://user:pass@host:5432/vays_newsletter
+alembic upgrade head          <span class="c"># builds the schema fresh on Postgres</span></pre>
+<p>Everything is SQLAlchemy 2.x with no raw SQL and no SQLite-only types, so the ORM layer
+carries over unchanged. Two things to check:</p>
+<ul>
+<li>The WAL and <code>foreign_keys</code> pragmas in <code>database.py</code> are SQLite-specific.
+They are applied on connect and are harmless elsewhere, but read that function before you move.</li>
+<li>Migrating <em>existing data</em> is a separate exercise from creating the schema. For a fresh
+Postgres, <code>alembic upgrade head</code> is genuinely all of it.</li>
+</ul>
+<p><b>Verify:</b> the full integration suite runs against the new URL —
+<code>pytest tests/integration</code>.</p>
+</div>
+
+<div class="swap">
+<span class="eff">1 class</span>
+<h3>9.6 The blog source</h3>
+<p class="why"><b>Why:</b> Vays moves off WordPress, or you want to monitor OEM partner blogs
+instead of (or as well as) the Vays blog.</p>
+<ol>
+<li>Point <code>AGENT_BLOG_URL</code> elsewhere. WordPress REST is tried first, RSS second —
+most blogs need nothing more.</li>
+<li>For a site with neither: implement <code>DiscoverySource</code> in
+<code>modules/discovery/</code> — one method, <code>fetch() -&gt; list[DiscoveredPost]</code> —
+and add it to <code>build_sources()</code>.</li>
+</ol>
+<p><b>Always populate <code>external_id</code> if the source has a stable identifier.</b>
+<code>dedupe_key()</code> prefers it over the URL, so a changed slug does not resurface a post
+that has already been sent.</p>
+<p><b>Verify:</b> <code>python agent_worker.py --once</code> with
+<code>EMAIL_PROVIDER=console</code>, then check the <code>discovered_posts</code> table.</p>
+</div>
+
+<div class="swap">
+<span class="eff">1 env var</span>
+<h3>9.7 Public hosting for approval links</h3>
+<p class="why"><b>Why:</b> today the approval link points at <code>localhost</code> or a rotating
+ngrok URL, so it only works from the machine running the dashboard. This is the change that makes
+it work from a manager's phone.</p>
+<pre><span class="c"># development — no configuration, tries ngrok then falls back</span>
+AGENT_APP_BASE_URL=auto
+
+<span class="c"># production — one line, and every generated link follows</span>
+AGENT_APP_BASE_URL=https://newsletter.vaysinfotech.com</pre>
+<p>Everything that builds a link routes through <code>resolve_base_url()</code>, so this single
+variable is the whole migration. Nothing else needs to change.</p>
+<div class="note"><b>Current state</b>
+ngrok is installed but has <b>no authtoken configured</b> and no reserved domain, so its URL
+rotates on every restart. Claiming a free static domain is worth ten minutes if approval-from-phone
+matters before a real domain exists.</div>
+</div>
+
+<div class="swap">
+<span class="eff">additive</span>
+<h3>9.8 Authentication</h3>
+<p class="why"><b>Why:</b> company SSO, or moving off self-managed accounts.</p>
+<p>The documented upgrade path is to replace <code>AuthService.authenticate()</code> with an
+OIDC/SAML exchange while keeping the rest of the interface. <code>UserRole</code> and the
+<code>users</code> table stay as the authorisation layer; only the identity check changes.</p>
+<p>D-15 chose ~160 auditable lines in <code>core/auth.py</code> over an unvetted third-party
+package on the security boundary, precisely so this file could be read in full at handover and
+replaced deliberately.</p>
+</div>
+
+<div class="swap">
+<span class="eff">edit YAML</span>
+<h3>9.9 Prompts</h3>
+<p class="why"><b>Why:</b> tone, length, structure, or fixing something the model keeps getting
+wrong.</p>
+<p><b>Prompts are versioned, never edited in place</b> (D-6). Copy
+<code>prompts/newsletter_compose/v1.1.0.yaml</code> to <code>v1.2.0.yaml</code> and change that.
+Every campaign records the prompt version that produced it, so old campaigns still resolve their
+original prompt and remain reproducible.</p>
+<p>Shared fragments live in <code>prompts/_shared/</code>: <code>human_voice.md</code>,
+<code>length_rules.md</code>, <code>system_persona.md</code>, <code>untrusted_input_rules.md</code>.
+Editing one changes every prompt that includes it — which is usually what you want for a
+voice change.</p>
+<h4>Two lessons that cost real debugging</h4>
+<ul>
+<li><b>State limits as hard limits.</b> "approximately 60 characters" overshot every time.
+<code>MAXIMUM 60 characters (this is a hard limit, not a target)</code> landed in range on the
+first try.</li>
+<li><b>A prompt instruction is not a guarantee.</b> v1.0.0 said "give each story a short bold
+heading"; the field is plain text, so the model emitted <code>**Heading**</code> and the asterisks
+reached the customer. Fixed at both ends — v1.1.0 bans markdown explicitly, <em>and</em>
+<code>_split_paragraphs</code> converts a whitelist of markdown to real HTML as a safety net.
+<b>Order is the security property</b>: each paragraph is escaped first, then our own tags are
+inserted into the escaped string, so the safety net cannot become an injection hole.</li>
+</ul>
+<p><b>Verify:</b> <code>python scripts/validate_prompts.py</code> (checks schema and the
+<code>max_tokens</code> floor), then generate against a real article and read the output.</p>
+</div>
+
+<h3>9.10 Swap summary</h3>
+<table>
+<thead><tr><th style="width:24%">Swap</th><th style="width:14%">Effort</th><th style="width:26%">Touch points</th><th>Proven?</th></tr></thead>
+<tbody>
+<tr><td>LLM model</td><td><span class="pill p-ok">trivial</span></td><td><code>LLM_MODEL</code></td><td>yes — 120b and 20b both run</td></tr>
+<tr><td>LLM host</td><td><span class="pill p-ok">1 class</span></td><td><code>modules/ai/factory.py</code></td><td><b>yes — Colab → Groq</b></td></tr>
+<tr><td>Email provider</td><td><span class="pill p-ok">trivial</span></td><td><code>EMAIL_PROVIDER</code></td><td>yes — console, SMTP live</td></tr>
+<tr><td>Template</td><td><span class="pill p-ok">1 file</span></td><td><code>templates/email/</code></td><td>yes — 3 ship</td></tr>
+<tr><td>Database</td><td><span class="pill p-mid">1 URL + driver</span></td><td><code>DATABASE_URL</code></td><td>designed for; not exercised</td></tr>
+<tr><td>Blog source</td><td><span class="pill p-ok">1 class</span></td><td><code>modules/discovery/</code></td><td>yes — WordPress + RSS</td></tr>
+<tr><td>Public URL</td><td><span class="pill p-ok">1 var</span></td><td><code>AGENT_APP_BASE_URL</code></td><td>yes — localhost and ngrok</td></tr>
+<tr><td>Auth</td><td><span class="pill p-mid">1 method</span></td><td><code>AuthService.authenticate</code></td><td>designed for; not exercised</td></tr>
+<tr><td>Prompts</td><td><span class="pill p-ok">new YAML</span></td><td><code>prompts/</code></td><td>yes — v1.0.0 → v1.1.0, A/B measured</td></tr>
+<tr><td>Add a FastAPI shell</td><td><span class="pill p-mid">additive</span></td><td>new package calling <code>services/</code></td><td>the zero-Streamlit-import rule is enforced today</td></tr>
+</tbody>
+</table>
+
+<h2 id="s10"><span class="num">10</span>Operations runbook</h2>
+
+<h3>10.1 Starting and stopping</h3>
+<table>
+<thead><tr><th style="width:26%">Command</th><th>Starts</th></tr></thead>
+<tbody>
+<tr><td><code>run.bat</code></td><td>The dashboard on <code>http://localhost:8501</code>. Preflight-checks venv, <code>.env</code>, migrations and accounts.</td></tr>
+<tr><td><code>run_agent.bat</code></td><td><b>The agent worker.</b> Without this, nothing is automatic.</td></tr>
+<tr><td><code>run_tunnel.bat</code></td><td>ngrok, so approval links work off-machine.</td></tr>
+<tr><td><code>python agent_worker.py --once</code></td><td>One discovery+dispatch cycle, then exit. The safe way to test.</td></tr>
+<tr><td><code>install_agent_task.bat</code></td><td>Registers the worker as a Windows scheduled task so it survives a reboot.</td></tr>
+</tbody>
+</table>
+<p>Stop either process with <kbd>Ctrl+C</kbd> in its window. Closing the dashboard does not stop
+the worker, and stopping the worker does not affect anyone using the dashboard — they are
+independent (§3.3).</p>
+
+<h3>10.2 The single most common problem</h3>
+<div class="warn"><b>"The agent isn't doing anything"</b>
+In every instance so far, the worker process was simply not running. <code>run.bat</code> starts
+the <b>dashboard only</b>. Check the Dashboard's agent panel: if <b>worker last seen</b> reads
+<i>never</i> or a stale timestamp, start <code>run_agent.bat</code>. Then confirm
+<code>AGENT_ENABLED=true</code> — the worker exits immediately when it is false.</div>
+
+<h3>10.3 Diagnosis table</h3>
+<table>
+<thead><tr><th style="width:28%">Symptom</th><th style="width:32%">Most likely cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>No campaigns appear automatically</td><td>Worker not running, or <code>AGENT_ENABLED=false</code></td><td><code>run_agent.bat</code>; check the dashboard heartbeat</td></tr>
+<tr><td>Campaign sits in AWAITING_APPROVAL</td><td>Working as designed — nobody has approved</td><td>Approve via the email link or the Approvals page</td></tr>
+<tr><td>Approved but not sending</td><td>Not yet the 3rd Wednesday</td><td>Read "next send" on the dashboard. This is normal (§5.2).</td></tr>
+<tr><td>Approval link 404s / does not open</td><td>ngrok restarted and rotated its URL, or the link points at localhost from another device</td><td>Set <code>AGENT_APP_BASE_URL</code> (§9.7)</td></tr>
+<tr><td>Approval link says invalid</td><td>Token used, expired, or for a different campaign — all four checks fail identically</td><td>Approve from the Approvals page instead</td></tr>
+<tr><td>Sidebar says AI service offline</td><td>Groq unreachable, bad key, or the circuit breaker is open</td><td>Settings → Test Connection for the real error</td></tr>
+<tr><td>Generation fails with <code>json_validate_failed</code></td><td><code>LLM_MAX_TOKENS</code> below 2048</td><td>Raise it — §8.3 warning</td></tr>
+<tr><td>Generation slow or 429</td><td>Groq free-tier TPM ceiling (risk C-8)</td><td><code>Retry-After</code> is honoured automatically; reduce <code>SCRAPER_MAX_INPUT_TOKENS</code> or use <code>gpt-oss-20b</code></td></tr>
+<tr><td>Nothing arrives in an inbox</td><td><code>EMAIL_PROVIDER=console</code></td><td>Check <code>data/outbox/</code> — the emails are there as <code>.eml</code></td></tr>
+<tr><td>Send refuses outright</td><td>Guard 4 — no unsubscribe URL or postal address</td><td>Set <code>BRAND_ADDRESS</code> and <code>UNSUBSCRIBE_BASE_URL</code></td></tr>
+<tr><td>Logo missing in the email</td><td><code>BRAND_LOGO_PATH</code> points at a missing file</td><td>Degrades to a text fallback by design; fix the path. Never blocks a send.</td></tr>
+<tr><td>Refresh logs you out</td><td>Cookie blocked, or <code>APP_SECRET_KEY</code> changed</td><td>Changing the key invalidates every session — expected</td></tr>
+<tr><td>Multiple newsletters at once</td><td><code>AGENT_MAX_IN_FLIGHT</code> above 1</td><td>Set it to 1 — §5.3</td></tr>
+</tbody>
+</table>
+
+<h3>10.4 Where to look</h3>
+<table class="kv">
+<tbody>
+<tr><td>Logs page</td><td>Searchable, filterable by level and correlation id. Start here.</td></tr>
+<tr><td><code>logs/app.jsonl</code></td><td>Rotating JSON lines, always at DEBUG regardless of the console level</td></tr>
+<tr><td>Dashboard agent panel</td><td>Worker heartbeat, last run report, next send time</td></tr>
+<tr><td>Campaign History</td><td>Per-recipient delivery status and failure reasons</td></tr>
+<tr><td><code>data/outbox/</code></td><td><code>.eml</code> files when the provider is <code>console</code></td></tr>
+</tbody>
+</table>
+<p>A correlation id threads one generation or send through every log line, so filtering on it
+gives the complete story of a single operation.</p>
+
+<h3>10.5 Routine tasks</h3>
+<h4>Back up</h4>
+<pre>copy data\newsletter.db backups\newsletter-2026-08-18.db</pre>
+<p>SQLite is one file. Copy it. In WAL mode, prefer copying while nothing is writing, or use
+<code>sqlite3 data/newsletter.db ".backup backups/x.db"</code> for a consistent snapshot.</p>
+
+<h4>Make the agent forget discovered posts</h4>
+<p>Clearing <code>discovered_posts</code> makes the agent treat every existing blog post as new.
+That is occasionally what you want (a fresh start) and usually not (it will regenerate old
+content). Take a backup first, and remember <code>max_in_flight</code> is what stops a
+re-discovered backlog becoming a flood of email.</p>
+
+<h4>Change who receives newsletters</h4>
+<p>Recipients page: upload a CSV (appends — it does not replace), paste addresses, or remove
+individuals. Removal deactivates rather than deletes, so past campaign history still resolves.
+Suppressed addresses stay suppressed even if re-uploaded.</p>
+
+<h4>Change who approves</h4>
+<p><code>AGENT_APPROVAL_EMAIL</code>, or Settings → Agent. Takes effect on the next approval
+request; already-issued tokens are unaffected.</p>
+
+<h2 id="s11"><span class="num">11</span>Testing &amp; quality gates</h2>
+
+<p class="lede">Six gates. All six must pass before anything is committed, and CI runs them on
+Windows and Ubuntu across Python 3.11 and 3.12.</p>
+
+<table>
+<thead><tr><th style="width:34%">Gate</th><th style="width:14%">Status</th><th>Protects</th></tr></thead>
+<tbody>
+<tr><td><code>python scripts/check_no_local_inference.py</code></td><td><span class="pill p-ok">pass</span></td>
+    <td>The zero-local-inference guarantee. <b>Runs first in CI</b> — if someone adds torch, nothing else matters.</td></tr>
+<tr><td><code>ruff format --check .</code></td><td><span class="pill p-ok">pass</span></td><td>Formatting</td></tr>
+<tr><td><code>ruff check .</code></td><td><span class="pill p-ok">pass</span></td><td>Lint</td></tr>
+<tr><td><code>mypy core config modules services</code></td><td><span class="pill p-ok">74 files clean</span></td><td>Types</td></tr>
+<tr><td><code>lint-imports</code></td><td><span class="pill p-ok">4 kept, 0 broken</span></td><td>The layer rule (§3.1)</td></tr>
+<tr><td><code>pytest</code></td><td><span class="pill p-ok">1,168 passed · 93%</span></td><td>Behaviour</td></tr>
+</tbody>
+</table>
+
+<pre><span class="c"># everything, in the order CI runs it</span>
+python scripts/check_no_local_inference.py
+ruff format --check . &amp;&amp; ruff check .
+mypy core config modules services
+lint-imports
+pytest
+
+<span class="c"># faster loops</span>
+pytest tests/unit -q              <span class="c"># pure logic, no I/O</span>
+pytest tests/integration -q       <span class="c"># real SQLite, stubbed network</span>
+pytest tests/e2e -q               <span class="c"># Streamlit AppTest — renders every page</span>
+pytest --cov --cov-report=html    <span class="c"># htmlcov/index.html</span></pre>
+
+<h3>11.1 Test principles that were learned, not assumed</h3>
+<ul>
+<li><b>A coverage percentage hides a zero.</b> <code>generation_service.py</code> — the
+orchestrator every generation flows through — had <b>0% coverage</b> while the suite reported 90%
+overall. It is now 100%, tested with a stub engine rather than <code>MockProvider</code> so each
+failure mode can be provoked directly. This was the <b>fourth</b> instance of the same
+dead-code/untested-core pattern (<code>app_logs</code>, <code>settings</code>,
+<code>set_password</code>, then this). <b>Grep for repositories with no production caller before
+assuming a module works.</b></li>
+<li><b>Synthetic fixtures do not exercise token budgets.</b> <code>article_summary</code> at 1024
+tokens passed on a synthetic article and failed on a real one.</li>
+<li><b>Tests must not touch the network or real data.</b> Two tests were caught hitting the live
+blog and the real Groq API, and one read the developer's actual recipients directory. Fixtures now
+stub discovery and point at temp directories.</li>
+<li><b>A test must discriminate the bug.</b> My first health-check test passed against both the
+broken and fixed code because the mock provider is healthy either way. Rewritten around
+"configured but unhealthy", which is the case that actually differed.</li>
+<li><b>SQLite returns plain <code>str</code> for enum columns.</b> <code>StrEnum</code> compares
+equal but not identical, so assert with <code>==</code>, never <code>is</code>.</li>
+<li><b><code>AppTest.from_function</code> re-executes the function's source</b>, so a closure over
+an outer variable is silently lost — pass values via <code>args=</code>. The first
+<code>test_pages.py</code> asserted on pages it never rendered and would have passed against a UI
+that crashed on every click.</li>
+</ul>
+
+<h3>11.2 CI details worth keeping</h3>
+<ul>
+<li><code>pip-audit</code> is <code>continue-on-error</code> and therefore <b>advisory</b> — a
+green tick does not mean clean. Read its output.</li>
+<li>A dedicated job greps <b>full git history</b> for <code>gsk_</code> and <code>xkeysib-</code>,
+because a secret deleted in a later commit is still leaked. Verified: history is clean and
+<code>.env</code> was never tracked.</li>
+<li>The suite is also run under CI conditions (no <code>.env</code>, environment variables only)
+to prove the workflow configuration is right rather than plausible.</li>
+<li>Every internal documentation link is checked by a script.</li>
+</ul>
+
+<h2 id="s12"><span class="num">12</span>Security</h2>
+
+<h3>12.1 Secrets</h3>
+<table>
+<thead><tr><th style="width:32%">Control</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td><code>.env</code> is git-ignored; <code>.env.example</code> is committed</td><td>Verified — <code>.env</code> was never tracked</td></tr>
+<tr><td>Secrets cannot enter the editable settings registry</td><td>Import-time <code>SecretStr</code> check — §8.2</td></tr>
+<tr><td>Secrets are redacted from every log line</td><td><code>redact_secrets</code> processor; addresses partially masked</td></tr>
+<tr><td>Git history scanned for key prefixes</td><td>Dedicated CI job over full history</td></tr>
+<tr><td>Passwords are bcrypt with per-password salts</td><td><code>core/auth.py</code></td></tr>
+<tr><td><b>No default account or password exists</b></td><td>First login is created by <code>python -m scripts.create_user</code>, which enforces strength. There is no fallback credential to forget to change.</td></tr>
+</tbody>
+</table>
+
+<h3>12.2 Input handling</h3>
+<ul>
+<li><b>SSRF guard on every URL.</b> <code>resolve_public_addresses()</code> refuses loopback,
+link-local and RFC-1918 ranges — so a pasted <code>http://169.254.169.254/</code> cannot make the
+server fetch cloud metadata.</li>
+<li><b>Scraped text is untrusted input.</b> <code>prompts/_shared/untrusted_input_rules.md</code>
+instructs the model to treat article content as data, not instructions.</li>
+<li><b>Escape first, then insert.</b> The markdown safety net escapes each paragraph before
+inserting our own tags into the escaped string, so it cannot become an HTML-injection hole.</li>
+<li><b>Approval tokens</b> — random, hashed at rest, single-use, expiring, campaign-scoped (§4.3).</li>
+</ul>
+
+<h3>12.3 Sessions</h3>
+<p>A browser refresh starts a new Streamlit session, so <code>session_state</code> is empty even
+though nobody signed out. <code>ui/session.py</code> restores the session from a cookie carrying
+the same HMAC-signed token the login issues. Three checks run before it is honoured:</p>
+<ol>
+<li><b>The signature verifies</b> against <code>APP_SECRET_KEY</code>. A forged or tampered cookie
+is indistinguishable from a missing one.</li>
+<li><b>The token has not expired</b> — 12 hours, carried inside the payload.</li>
+<li><b>The account still exists and is active.</b> This is the check the token cannot make for
+itself: without it, deactivating someone would leave them signed in for up to twelve more
+hours.</li>
+</ol>
+<p>The role that is honoured comes from the database, not from the token, so a stale cookie cannot
+preserve a privilege that has since been revoked. A cookie that fails any check is cleared, so the
+browser stops presenting something that will never work again. Eleven tests cover these paths.</p>
+<div class="note"><b>A deliberate distinction from D-15</b>
+<code>extra-streamlit-components</code> (Apache-2.0) is used purely as cookie <em>storage</em> —
+it writes and reads an opaque string. Every security property stays in <code>core/auth.py</code>.
+That is why this is compatible with D-15, which refused <code>streamlit-authenticator</code>
+because that package would have owned authentication itself. <b>A cookie jar owns nothing.</b></div>
+<div class="warn"><b>Known limitation</b>
+The cookie is written from the browser side and therefore cannot be <code>HttpOnly</code>. That is
+inherent to setting cookies from Streamlit, not a shortcut. It is acceptable on a LAN-internal
+tool; <b>if this app is ever exposed publicly, revisit it</b> — the mitigation is a server-side
+session store, or terminating auth at a reverse proxy.</div>
+
+<h3>12.4 Roles</h3>
+<p>Two roles. <b>Editor</b> can generate, edit and send. <b>Admin</b> adds settings editing and
+user management. Password change re-authenticates first, so it runs the lockout counter and cannot
+be used to brute-force from inside a session. Self-deactivation is refused rather than warned
+about — the only admin locking themselves out has no way back in.</p>
+
+<h2 id="s13"><span class="num">13</span>Decision register</h2>
+
+<p class="lede">The full register is <code>docs/09_FINAL_DECISIONS.md</code> with ADRs for the
+reversals. Summarised here because the reversals are the ones a future developer would otherwise
+re-litigate.</p>
+
+<h3>13.1 Decisions that held</h3>
+<table>
+<thead><tr><th style="width:10%">ID</th><th style="width:34%">Decision</th><th>Why it still stands</th></tr></thead>
+<tbody>
+<tr><td>D-1</td><td>No separate FastAPI backend in v1</td><td>One deployable is simpler to hand over. The service layer has zero Streamlit imports, so adding an API later is additive, not a rewrite.</td></tr>
+<tr><td>D-2</td><td>"Open source" constrains the <b>model</b>, not the host</td><td>This is what makes Groq legitimate: it serves only open-source models.</td></tr>
+<tr><td>D-3</td><td>Guided JSON decoding, not prompt-and-pray</td><td><code>strict: true</code> constrains generation to the schema, so <code>json.loads</code> cannot fail.</td></tr>
+<tr><td>D-4</td><td>Two-stage generation</td><td>Smaller prompts give better quality on a mid-size model and cheaper retries.</td></tr>
+<tr><td>D-5</td><td><b>Human approval is mandatory</b></td><td>The core mitigation for the model inventing an OEM fact. Not removable by configuration.</td></tr>
+<tr><td>D-6</td><td>Prompts are versioned YAML in Git</td><td>Every campaign records the version that produced it, so any output is reproducible.</td></tr>
+<tr><td>D-12/13</td><td>No local inference, machine-enforced</td><td>A CI gate, not a code-review comment.</td></tr>
+<tr><td>D-14</td><td>Token counting is a pure-Python heuristic</td><td>Keeps a 2 GB dependency out of the tree.</td></tr>
+<tr><td>D-15</td><td>Own auth module</td><td>No unvetted package on the security boundary; auditable at handover.</td></tr>
+<tr><td>D-16</td><td><code>html2text</code> (GPL-3.0) dropped</td><td>Every remaining dependency is permissively licensed.</td></tr>
+<tr><td>D-19</td><td>Secrets stay in <code>.env</code></td><td>Enforced by an import-time mechanism, not a rule.</td></tr>
+</tbody>
+</table>
+
+<h3>13.2 Decisions that were reversed — read these first</h3>
+<table>
+<thead><tr><th style="width:10%">ID</th><th style="width:30%">Reversal</th><th>What actually happened</th></tr></thead>
+<tbody>
+<tr><td><b>D-21</b></td><td>Colab dropped; Groq adopted</td>
+    <td>Colab was attempted twice on real hardware and never generated a token — a CUDA-13 vs
+    CUDA-12 wheel mismatch, then an install/restart loop. Beyond those fixable faults the
+    <em>shape</em> was wrong: 3-hour sessions, a rotating tunnel URL, no guaranteed GPU, and a
+    standing ToS conflict. <b>The switch cost one class and a config default</b>, which is the
+    clearest possible validation of the <code>LLMProvider</code> seam.</td></tr>
+<tr><td><b>D-23</b></td><td>MJML dropped</td>
+    <td>Node is not installed, so <code>.mjml</code> sources could not be compiled. An
+    uncompilable source of truth is worse than none. Hand-authored table HTML removes the last
+    Node dependency at any stage.</td></tr>
+<tr><td><b>D-24</b></td><td>Two-layer configuration</td>
+    <td>Runtime settings override <code>.env</code>, which stays the bottom layer so a handover is
+    still configured by a file in Git.</td></tr>
+<tr><td><b>CID logo</b></td><td>Filesystem path → <code>cid:</code></td>
+    <td>The original code put a <em>filesystem</em> path into <code>&lt;img src&gt;</code>, which no
+    mail client can resolve. Gmail and Outlook both strip <code>data:</code> URIs, so CID embedding
+    is the only approach that works without web hosting.</td></tr>
+</tbody>
+</table>
+
+<h3>13.3 Live risks</h3>
+<table>
+<thead><tr><th style="width:8%">ID</th><th style="width:30%">Risk</th><th>Mitigation</th></tr></thead>
+<tbody>
+<tr><td><b>C-8</b></td><td><b>Groq free-tier token limit (~8–12k TPM)</b> — the binding constraint</td>
+    <td>Input budget cut 6000 → 3000 per article; <code>Retry-After</code> honoured;
+    <code>LLMRateLimitedError</code> distinguishes "busy" from "broken". A paid tier is ~10× if
+    it bites.</td></tr>
+<tr><td>C-9</td><td><code>openai/gpt-oss-120b</code> <em>looks</em> proprietary and is not</td>
+    <td>Apache 2.0 open-weight. Documented in <code>04_LLM_HOSTING.md</code> §4 and
+    <code>.env.example</code>, because this will be asked at review.</td></tr>
+<tr><td>C-3</td><td>Model hallucinates or fabricates an OEM claim</td>
+    <td>Mandatory human review; source-URL provenance shown beside each block; grounding
+    instructions; an extractive summary stage before the generative one.</td></tr>
+<tr><td>C-4</td><td>Blog sites block scraping or are JS-rendered</td>
+    <td>Three-tier cascade, polite UA, robots.txt check, manual-paste fallback.</td></tr>
+<tr><td>C-5</td><td>Email lands in spam</td>
+    <td><code>List-Unsubscribe</code>, plain-text alternative, verified sender domain
+    (SPF/DKIM/DMARC), suppression list.</td></tr>
+<tr><td>C-6</td><td>Copyright — republishing OEM content</td>
+    <td>Original summaries, always link back, attribution block in the template.</td></tr>
+</tbody>
+</table>
+
+<h2 id="s14"><span class="num">14</span>Known gaps &amp; next steps</h2>
+
+<p class="lede">Stated plainly, because a handover that overstates completeness is worse than one
+that admits a gap.</p>
+
+<table>
+<thead><tr><th style="width:30%">Gap</th><th style="width:12%">Severity</th><th>Detail and what closing it takes</th></tr></thead>
+<tbody>
+<tr><td><b>M5 — visual email-client verification</b></td><td><span class="pill p-mid">open</span></td>
+    <td>Templates render correctly and CSS inlines, but <b>nobody has opened the result in real
+    Outlook and Gmail</b>. This needs a human with those clients — it cannot be automated here.
+    Open the <code>.eml</code> files in <code>data/outbox/</code> and check the logo, the header
+    band and mobile width. <b>This is the last M5 item and the reason M5 is amber, not green.</b></td></tr>
+<tr><td>ngrok has no authtoken</td><td><span class="pill p-mid">open</span></td>
+    <td>The URL rotates on every restart, so approval links go stale. Claim a free static domain,
+    or set <code>AGENT_APP_BASE_URL</code> to a real domain (§9.7).</td></tr>
+<tr><td>Recipient list is test addresses</td><td><span class="pill p-no">before go-live</span></td>
+    <td>Currently two personal addresses. Replace with the real customer list on the Recipients
+    page before enabling the agent.</td></tr>
+<tr><td>Agent is disabled</td><td><span class="pill p-ok">intentional</span></td>
+    <td><code>AGENT_ENABLED=false</code> by design until the list and approval routing are final.</td></tr>
+<tr><td>Postgres path untested</td><td><span class="pill p-ok">low</span></td>
+    <td>No SQLite-only SQL is used, but the migration has not been exercised. Do it before
+    assuming it is free.</td></tr>
+<tr><td>Session cookie is not <code>HttpOnly</code></td><td><span class="pill p-mid">if public</span></td>
+    <td>Inherent to setting cookies from Streamlit. Acceptable on a LAN; revisit before public
+    exposure (§12.3).</td></tr>
+<tr><td>Groq free-tier ceiling</td><td><span class="pill p-mid">watch</span></td>
+    <td>One article ≈ 3,450 tokens against ~8–12k per minute. Fine at one post per month; it would
+    bite immediately at higher volume.</td></tr>
+<tr><td>Handover walkthrough with Vays</td><td><span class="pill p-mid">scheduled</span></td>
+    <td>This document is the material for it.</td></tr>
+</tbody>
+</table>
+
+<h3>14.1 If you are the next developer, do this first</h3>
+<ol>
+<li>Run the quick start in §2. If it does not work from this document alone, that is a
+documentation bug worth reporting.</li>
+<li>Run all six gates (§11). They should be green before you change anything, so you know any
+later failure is yours.</li>
+<li>Read <code>core/models.py</code> and <code>core/enums.py</code> — about 700 lines that
+describe every object in the system.</li>
+<li>Run <code>python agent_worker.py --once</code> with <code>EMAIL_PROVIDER=console</code> and
+watch the logs. That is the whole automated pipeline in one command, with nothing leaving the
+machine.</li>
+<li>Read §13.2 before reversing any decision. Each of those was reversed once already, for
+reasons that are not obvious from the code.</li>
+</ol>
+
+<h3>14.2 Document index</h3>
+<table>
+<thead><tr><th style="width:34%">Document</th><th>Contents</th></tr></thead>
+<tbody>
+<tr><td><code>README.md</code></td><td>Orientation and the short quick start</td></tr>
+<tr><td><code>docs/SETUP_GUIDE.md</code></td><td>Fresh-machine install in detail</td></tr>
+<tr><td><code>docs/RUNBOOK.md</code></td><td>Operations</td></tr>
+<tr><td><code>docs/ARCHITECTURE.md</code></td><td>Module contracts and interfaces</td></tr>
+<tr><td><code>docs/SWAP_THE_LLM.md</code></td><td>The LLM swap in depth</td></tr>
+<tr><td><code>docs/PROMPT_GUIDE.md</code></td><td>Writing and versioning prompts</td></tr>
+<tr><td><code>docs/KNOWN_ISSUES.md</code></td><td>Live issue list</td></tr>
+<tr><td><code>docs/PUBLIC_ACCESS.md</code></td><td>ngrok and public hosting</td></tr>
+<tr><td><code>docs/09_FINAL_DECISIONS.md</code></td><td>The full decision register, security control matrix, deliverability contract</td></tr>
+<tr><td><code>docs/04_LLM_HOSTING.md</code></td><td>Groq setup, model choice, rate limits, the handover swap</td></tr>
+<tr><td><code>docs/adr/</code></td><td>Four ADRs covering the reversed decisions</td></tr>
+<tr><td><code>CLAUDE.md</code></td><td>Project memory — decisions, milestones, measured results</td></tr>
+</tbody>
+</table>
+
+<div style="margin-top:2.4em;padding:16px 18px;background:var(--luna-darkest);border-radius:7px;color:#DCEFF5;">
+  <div style="color:var(--luna-lightest);font-weight:700;font-size:11pt;margin-bottom:6px;">
+    Status at handover</div>
+  <div style="font-size:9.4pt;line-height:1.7;">
+    <b>M0–M4, M6–M10 complete and verified.</b> M5 is code-complete and awaiting a visual check in
+    a real email client — the one task that needs a human with Outlook and Gmail.<br>
+    <b>1,168 tests · 93% coverage · six gates green</b> on Windows and Ubuntu, Python 3.11 and 3.12.<br>
+    The manual pipeline has generated and delivered real newsletters through Gmail. The automated
+    pipeline has run end to end — discovery, generation, approval by email, scheduled send.<br>
+    <span style="color:#8FBDD1;">Every dependency is permissively licensed. No model, weights, or
+    inference runtime has ever run on the development machine, and a CI gate makes sure it stays
+    that way.</span>
+  </div>
+</div>
+
+</body>
+</html>

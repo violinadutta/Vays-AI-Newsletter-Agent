@@ -1,12 +1,32 @@
 # ── Secrets — NEVER commit ───────────────────────────────────────────────────
+# `.env.*` is deliberately broad and comes with one explicit exception, because
+# a narrow list has already failed once: ad-hoc copies such as
+# `.env.before-agent-config` matched none of `.env`, `.env.local` or
+# `.env.*.local`, and would have been committed with a live API key in them.
+# Anything env-shaped is now ignored unless it is named on the next line.
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+
+# Timestamped copies of .env taken before configuration changes. Same content,
+# same secrets, and the reason the rule above is written the way it is.
+backups/
+
 *.key
 *.pem
+*_rsa
+*_rsa.pub
+id_ed25519*
+*.p12
+*.pfx
+credentials.json
+service-account*.json
 .secrets.baseline.local
 
 # ── Runtime data (contains recipient PII — D-20) ─────────────────────────────
+# Recreated automatically by config.constants.ensure_runtime_dirs() on startup,
+# so a fresh clone needs none of this. The database holds real subscriber
+# addresses and delivered campaign copy; the outbox holds rendered emails.
 data/
 *.db
 *.db-journal
@@ -18,27 +38,42 @@ logs/
 # ── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
+*$py.class
 *.egg-info/
+.eggs/
 .venv/
 venv/
+env/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+.tox/
 .coverage
+.coverage.*
 htmlcov/
 coverage.xml
+*.cover
 
 # ── Editors / OS ─────────────────────────────────────────────────────────────
 .vscode/
 .idea/
+*.iml
+.DS_Store
 Thumbs.db
 desktop.ini
 *.swp
+*~
 
 # ── Build artefacts ──────────────────────────────────────────────────────────
 dist/
 build/
 node_modules/
 
-# NOTE: templates/email/*.html IS committed on purpose — it is the compiled
-# output of the .mjml sources, so the runtime needs no Node.js (D-18).
+# ── Local tooling ────────────────────────────────────────────────────────────
+ngrok.exe
+*.log
+
+# NOTE: templates/email/*.html IS committed on purpose — the runtime renders
+# from it directly and needs no Node.js (D-23, which dropped MJML).
+# NOTE: prompts/**/*.yaml IS committed on purpose — prompts are versioned
+# source, reviewed in pull requests like any other code (D-6).

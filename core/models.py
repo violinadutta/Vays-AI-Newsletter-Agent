@@ -163,6 +163,31 @@ class HealthStatus(BaseModel):
     checked_at: datetime = Field(default_factory=_utcnow)
 
 
+class DiscoveredPost(BaseModel):
+    """One blog post found by the discovery layer, before any processing.
+
+    ``external_id`` is the source's own stable identifier — a WordPress post ID.
+    It is the de-duplication key in preference to the URL, because a slug can be
+    edited after publication while the ID cannot: matching on URL alone would
+    re-process a post whose title was corrected.
+
+    ``None`` when the source has no such concept (a bare RSS feed), in which case
+    the repository falls back to the URL.
+    """
+
+    model_config = _STRICT
+
+    url: str
+    title: str
+    external_id: str | None = None
+    published_at: datetime | None = None
+    author: str | None = None
+    categories: list[str] = Field(default_factory=list)
+    #: Which discovery mechanism produced this — for the Logs page, and so a
+    #: silent fallback from API to feed is visible rather than inferred.
+    source: str = "unknown"
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  AI output — these define the prompt contract (see core.schemas)
 # ─────────────────────────────────────────────────────────────────────────────

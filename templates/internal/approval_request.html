@@ -1,0 +1,139 @@
+{# Approval request — internal, to management. Not a customer newsletter.
+
+   Deliberately plainer than the campaign templates: this is an operational
+   message, and dressing it up as marketing would make it easier to skim past.
+   It still follows the same client rules (tables, inline-able CSS, MSO wrapper)
+   because Outlook does not care what a message is for.
+
+   It carries NO recipient data and NO campaign content beyond what a reviewer
+   needs to decide — the preview is a short excerpt, not the newsletter.
+#}<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <title>Newsletter awaiting your approval</title>
+  <style type="text/css">
+    body { margin:0; padding:0; width:100% !important; background-color:#F7F8FA;
+           -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table { border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    .wrapper { width:100%; background-color:#F7F8FA; }
+    .container { width:600px; max-width:600px; background-color:#FFFFFF;
+                 border:1px solid #E3E6EB; }
+    .band { background-color:#14181F; padding:20px 32px; }
+    .band-text { font-family:Arial,Helvetica,sans-serif; font-size:13px;
+                 font-weight:bold; color:#FFFFFF; letter-spacing:1px; }
+    .cell { padding:28px 32px; font-family:Arial,Helvetica,sans-serif; color:#14181F; }
+    h1 { margin:0 0 6px 0; font-size:21px; line-height:28px; color:#14181F; }
+    p  { margin:0 0 14px 0; font-size:15px; line-height:24px; color:#14181F; }
+    .muted { color:#5A6472; font-size:13px; line-height:21px; }
+    .facts { width:100%; font-family:Arial,Helvetica,sans-serif; font-size:14px; }
+    .facts td { padding:7px 0; border-bottom:1px solid #EEF0F3; vertical-align:top; }
+    .facts .k { color:#5A6472; width:38%; }
+    .facts .v { color:#14181F; font-weight:bold; }
+    .excerpt { background-color:#F7F8FA; border-left:3px solid {{ brand.primary_color }};
+               padding:14px 16px; font-size:14px; line-height:23px; color:#33393F; }
+    .cta-cell { border-radius:6px; background-color:{{ brand.primary_color }}; }
+    .cta-link { display:inline-block; padding:14px 34px; font-family:Arial,Helvetica,sans-serif;
+                font-size:16px; font-weight:bold; color:{{ brand.text_on_primary }};
+                text-decoration:none; }
+    .footer { padding:20px 32px 26px 32px; font-family:Arial,Helvetica,sans-serif;
+              font-size:12px; line-height:19px; color:#8A94A3; }
+    @media only screen and (max-width:620px) {
+      .container { width:100% !important; }
+      .cell { padding:22px 20px !important; }
+    }
+  </style>
+</head>
+<body>
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#FFFFFF;">
+    {{ recipient_count }} recipients are waiting on your decision.&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+  </div>
+
+  <table role="presentation" class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0">
+
+          <tr>
+            <td class="band"><span class="band-text">APPROVAL REQUIRED</span></td>
+          </tr>
+
+          <tr>
+            <td class="cell">
+              <h1>A newsletter is ready for your review</h1>
+              <p class="muted">
+                Nothing has been sent. This campaign goes out only if you approve it,
+                and then not until {{ send_time_label }}.
+              </p>
+
+              <table role="presentation" class="facts" cellpadding="0" cellspacing="0" border="0">
+                {% if source_title %}
+                <tr>
+                  <td class="k">Source article</td>
+                  <td class="v">{{ source_title }}</td>
+                </tr>
+                {% endif %}
+                {% if source_url %}
+                <tr>
+                  <td class="k">Source link</td>
+                  <td class="v"><a href="{{ source_url }}" style="color:{{ brand.primary_color }};">{{ source_url }}</a></td>
+                </tr>
+                {% endif %}
+                <tr>
+                  <td class="k">Subject line</td>
+                  <td class="v">{{ subject }}</td>
+                </tr>
+                <tr>
+                  <td class="k">Preview text</td>
+                  <td class="v">{{ preview_text }}</td>
+                </tr>
+                <tr>
+                  <td class="k">Recipients</td>
+                  <td class="v">{{ "{:,}".format(recipient_count) }}</td>
+                </tr>
+                <tr>
+                  <td class="k">Scheduled send</td>
+                  <td class="v">{{ send_time_label }}</td>
+                </tr>
+                <tr>
+                  <td class="k">Written by</td>
+                  <td class="v">{{ model_name }}</td>
+                </tr>
+              </table>
+
+              <p style="margin-top:22px;"><strong>Opening lines</strong></p>
+              <div class="excerpt">{{ excerpt }}</div>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 6px 0;">
+                <tr>
+                  <td class="cta-cell" align="center">
+                    <a href="{{ review_url }}" class="cta-link">Review &amp; approve</a>
+                  </td>
+                </tr>
+              </table>
+              <p class="muted">
+                The link opens the platform, where you will need to sign in. It works
+                once and expires {{ expires_label }}. An expired link means the
+                campaign is not sent.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="footer">
+              Sent automatically by the {{ brand.name }} newsletter platform because a new
+              blog post was published.<br />
+              You are receiving this because you are the configured approver.
+            </td>
+          </tr>
+
+        </table>
+        <!--[if mso]></td></tr></table><![endif]-->
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

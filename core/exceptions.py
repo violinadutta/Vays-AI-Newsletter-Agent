@@ -34,6 +34,7 @@ __all__ = [
     "EmailError",
     "EmailProviderError",
     "EmailQuotaExceeded",
+    "DiscoveryError",
     "ExtractionError",
     "FetchError",
     "InvalidCSVError",
@@ -122,6 +123,24 @@ class InvalidCSVError(ValidationError):
     default_user_message = (
         "The recipient file couldn't be read. It needs a column named 'email'. "
         "Download the sample file to see the expected format."
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Discovery
+# ─────────────────────────────────────────────────────────────────────────────
+class DiscoveryError(NewsletterAppError):
+    """A discovery source could not be read.
+
+    Retryable by default: the overwhelmingly common cause is a transient network
+    problem or a site briefly down, and a discovery run that fails is simply one
+    the scheduler repeats. It must never take the application down — nobody is
+    watching when it fires.
+    """
+
+    retryable = True
+    default_user_message = (
+        "Couldn't check the blog for new posts. The next scheduled run will try again."
     )
 
 
