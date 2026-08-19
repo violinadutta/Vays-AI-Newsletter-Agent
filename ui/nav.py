@@ -39,6 +39,7 @@ PAGE_SPECS: tuple[tuple[str, str, str, str], ...] = (
     ("approvals", "approvals", "Approvals", ":material/how_to_reg:"),
     ("recipients", "recipients", "Recipients", ":material/group:"),
     ("history", "history", "Campaign History", ":material/history:"),
+    ("analytics", "analytics", "Delivery Analytics", ":material/analytics:"),
     ("settings", "settings_page", "Settings", ":material/settings:"),
     ("logs", "logs", "Logs", ":material/receipt_long:"),
 )

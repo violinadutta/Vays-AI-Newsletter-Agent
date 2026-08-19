@@ -56,6 +56,13 @@ STATUS_COLORS: dict[str, str] = {
     "PARTIAL_FAILURE": "#E0A22C",
     "FAILED": "#F0616D",
     "ARCHIVED": "#89A0B0",
+    # Per-recipient delivery statuses (SendStatus). BOUNCED is given its own
+    # tone rather than reusing FAILED red: a bounce is a property of the address
+    # and needs removing from the list, whereas a failure is usually transient
+    # and worth retrying — the same colour would flatten that distinction.
+    "QUEUED": "#E0A22C",
+    "BOUNCED": "#C97BC4",
+    "SUPPRESSED": "#89A0B0",
 }
 
 _CSS = f"""

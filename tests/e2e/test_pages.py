@@ -86,14 +86,15 @@ def seed_campaign() -> int:
 # ─────────────────────────────────────────────────────────────────────────────
 class TestPagesRender:
     @pytest.mark.parametrize(
-        "module", ["dashboard", "generate", "preview", "history", "settings_page", "logs"]
+        "module",
+        ["dashboard", "generate", "preview", "history", "analytics", "settings_page", "logs"],
     )
     def test_page_renders_without_raising(self, module: str) -> None:
         app = run_page(module)
 
         assert not app.exception, f"ui/pages/{module}.py raised on first render"
 
-    @pytest.mark.parametrize("module", ["dashboard", "history", "logs", "preview"])
+    @pytest.mark.parametrize("module", ["dashboard", "history", "logs", "preview", "analytics"])
     def test_empty_pages_show_a_next_step_not_a_blank(self, module: str) -> None:
         """A blank page reads as a bug. Every empty state names what to do."""
         app = run_page(module)

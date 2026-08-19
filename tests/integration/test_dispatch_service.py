@@ -206,6 +206,11 @@ class TestTheSendWindow:
         assert due.due_at == datetime(2026, 8, 14, 9, 0, tzinfo=IST)
 
 
+#: ``datetime.weekday()`` is Monday-based, so Wednesday is 2. Named because a
+#: bare 2 in a scheduling assertion is indistinguishable from a count.
+WEDNESDAY = 2
+
+
 class TestTheProductionSchedule:
     """The gate under the configuration Vays actually runs: 3rd Wednesday, 11:00."""
 
@@ -222,14 +227,26 @@ class TestTheProductionSchedule:
         reset_settings_cache()
 
     def test_it_waits_for_the_third_wednesday(self) -> None:
+        """Approved now, so the next 3rd Wednesday is always still ahead.
+
+        This asserted a fixed date (19 Aug 2026) until that day arrived and the
+        campaign became genuinely due, turning a real pass into a failure. The
+        property being tested is not *which* Wednesday but that the gate holds
+        until one arrives, so it is now expressed that way: approve at ``now``
+        and assert the shape of the resulting moment.
+        """
         campaign_id = a_campaign()
-        approve(campaign_id, at=datetime(2026, 8, 5, 10, 0, tzinfo=IST))
+        approve(campaign_id, at=datetime.now(UTC))
         delivery = StubDelivery()
 
         report = DispatchService(delivery=delivery).dispatch_due()
 
         [due] = report.waiting
-        assert due.due_at == datetime(2026, 8, 19, 11, 0, tzinfo=IST)
+        assert due.due_at > datetime.now(UTC), "a fresh approval cannot already be due"
+        local = due.due_at.astimezone(IST)
+        assert local.weekday() == WEDNESDAY
+        assert 15 <= local.day <= 21, "the 3rd Wednesday always falls in this range"
+        assert (local.hour, local.minute) == (11, 0)
         assert delivery.sent == []
 
     def test_it_sends_once_that_wednesday_has_passed(self) -> None:
