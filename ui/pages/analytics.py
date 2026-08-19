@@ -101,6 +101,19 @@ def _summary(service: AnalyticsService, days: int | None) -> None:
         with column:
             components.metric_card(label, value)
 
+    engagement = (
+        ("Liked", f"{summary.liked:,}", f"{summary.like_rate:.1f}% of delivered"),
+        (
+            "Unsubscribed",
+            f"{summary.unsubscribed:,}",
+            f"{summary.unsubscribe_rate:.1f}% of delivered",
+        ),
+    )
+    for column, (label, value, helper) in zip(st.columns(4)[:2], engagement, strict=False):
+        with column:
+            components.metric_card(label, value)
+            st.caption(helper)
+
     if summary.pending:
         st.caption(f"{summary.pending:,} still queued — not counted in the delivery rate.")
 
@@ -182,6 +195,8 @@ def _table(
             "Newsletter": st.column_config.TextColumn(width="large"),
             "Status": st.column_config.TextColumn(width="small"),
             "Delivered at": st.column_config.TextColumn(width="medium"),
+            "Liked": st.column_config.TextColumn(width="small"),
+            "Unsubscribed": st.column_config.TextColumn(width="small"),
         },
     )
 
@@ -215,6 +230,10 @@ def _row(record: object) -> dict[str, str]:
         "Newsletter": record.newsletter,  # type: ignore[attr-defined]
         "Status": record.status,  # type: ignore[attr-defined]
         "Delivered at": _timestamp(record),
+        # Words rather than a tick: this table is exported to CSV and read in a
+        # spreadsheet, where a bare symbol loses its meaning.
+        "Liked": "Yes" if record.liked else "",  # type: ignore[attr-defined]
+        "Unsubscribed": "Yes" if record.unsubscribed else "",  # type: ignore[attr-defined]
     }
 
 
@@ -257,7 +276,18 @@ def _csv(records: list[object]) -> str:
     """
     buffer = io.StringIO()
     writer = csv.writer(buffer, lineterminator="\n")
-    writer.writerow(["Recipient", "Email address", "Newsletter", "Status", "Delivered at", "Error"])
+    writer.writerow(
+        [
+            "Recipient",
+            "Email address",
+            "Newsletter",
+            "Status",
+            "Delivered at",
+            "Liked",
+            "Unsubscribed",
+            "Error",
+        ]
+    )
     for record in records:
         writer.writerow([*_row(record).values(), getattr(record, "error", None) or ""])
     return buffer.getvalue()

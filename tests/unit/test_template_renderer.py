@@ -77,10 +77,39 @@ class TestLegalCompliance:
     def test_every_template_carries_an_unsubscribe_link(
         self, renderer: TemplateRenderer, content: NewsletterContent, template_id: str
     ) -> None:
+        """The unsubscribe link is now per recipient, so at render time it is
+        still a placeholder — one campaign render serves every address.
+
+        Asserting the placeholder alone would be a weaker test than the one it
+        replaces, so this also runs the per-recipient pass and checks a real URL
+        comes out. Both halves must hold: present in the template, and resolved
+        before it could reach anyone.
+        """
+        from core.models import Recipient
+        from modules.template.renderer import UNSUBSCRIBE_TOKEN, apply_merge_tokens
+
         rendered = renderer.render(content, template_id)
 
-        assert "https://vaysinfotech.com/unsubscribe" in rendered.html
-        assert "https://vaysinfotech.com/unsubscribe" in rendered.text
+        assert UNSUBSCRIBE_TOKEN in rendered.html
+        assert UNSUBSCRIBE_TOKEN in rendered.text
+
+        links = {
+            "like_url": "https://vaysinfotech.com/?t=like",
+            "unsubscribe_url": "https://vaysinfotech.com/?t=unsub",
+        }
+        recipient = Recipient(email="dana@client.com")
+        for part in (rendered.html, rendered.text):
+            personalised = apply_merge_tokens(part, recipient, links)
+            assert links["unsubscribe_url"] in personalised
+            assert UNSUBSCRIBE_TOKEN not in personalised
+
+    @pytest.mark.parametrize("template_id", TEMPLATE_IDS)
+    def test_every_template_offers_a_like_link(
+        self, renderer: TemplateRenderer, content: NewsletterContent, template_id: str
+    ) -> None:
+        rendered = renderer.render(content, template_id)
+
+        assert "{{like_url}}" in rendered.html
 
     @pytest.mark.parametrize("template_id", TEMPLATE_IDS)
     def test_every_template_carries_the_postal_address(

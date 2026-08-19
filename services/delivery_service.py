@@ -22,10 +22,11 @@ import io
 import time
 from collections.abc import Callable
 
-from config import get_logger, get_settings
+from config import get_logger, get_settings, mask_email
 from core.enums import CampaignStatus, SendStatus, SuppressionReason
 from core.exceptions import (
     EmailAuthError,
+    EmailError,
     EmailQuotaExceeded,
     InvalidCSVError,
     InvalidEmailError,
@@ -50,7 +51,7 @@ from modules.repository.database import unit_of_work
 from modules.repository.recipient_repo import RecipientRepository, SuppressionRepository
 from modules.repository.send_repo import SendRepository
 from modules.template.brand import LOGO_CID, ResolvedBrand, logo_file, resolve_brand
-from modules.template.renderer import TemplateRenderer, apply_merge_tokens
+from modules.template.renderer import LINK_TOKENS, TemplateRenderer, apply_merge_tokens
 
 log = get_logger(__name__)
 
@@ -360,16 +361,92 @@ class DeliveryService:
         # per recipient here. Re-rendering per recipient would cost a full
         # template pass and a CSS inline for every address — minutes, on a list
         # of any size, for a substitution that is a regex.
+        # Per-recipient links: each carries a signed identity, so the Like and
+        # Unsubscribe buttons know who clicked without a database row per link.
+        links = self._recipient_links(recipient, campaign_id, brand)
+
+        html = apply_merge_tokens(rendered.html, recipient, links)
+        text = apply_merge_tokens(rendered.text, recipient, links)
+        self._assert_no_unresolved_links(html, text, recipient.email)
+
         return EmailMessage(
             to_email=recipient.email,
             to_name=recipient.name,
             subject=apply_merge_tokens(rendered.subject, recipient),
-            html=apply_merge_tokens(rendered.html, recipient),
-            text=apply_merge_tokens(rendered.text, recipient),
-            headers=unsubscribe_headers(brand.unsubscribe_url, settings.sender_address),
+            html=html,
+            text=text,
+            # One-click unsubscribe in the mail client's own UI. Points at the
+            # tracked link when there is one, so a client-level unsubscribe is
+            # recorded exactly like a click in the body.
+            headers=unsubscribe_headers(
+                links.get("unsubscribe_url") or brand.unsubscribe_url, settings.sender_address
+            ),
             tags=[f"campaign-{campaign_id}"] if campaign_id else [],
             inline_images=_logo_images(brand),
         )
+
+    @staticmethod
+    def _recipient_links(
+        recipient: Recipient, campaign_id: int | None, brand: ResolvedBrand
+    ) -> dict[str, str]:
+        """Signed Like and Unsubscribe URLs for one recipient.
+
+        **Always returns both keys.** The send-time guard refuses any message
+        with an unresolved token, so returning nothing here would block the
+        send rather than degrade it.
+
+        A test send has no campaign, and a click on it could not be attributed
+        to one, so it falls back to the plain unsubscribe URL: still a valid,
+        compliant email, just not a tracked one. The same fallback covers a
+        failure to mint — a newsletter that goes out untracked is a lost
+        statistic, while one that does not go out is a lost campaign.
+        """
+        untracked = {
+            "like_url": brand.website or brand.unsubscribe_url,
+            "unsubscribe_url": brand.unsubscribe_url,
+        }
+        if campaign_id is None:
+            return untracked
+
+        from core.enums import EmailAction
+        from services.engagement_service import EngagementService
+
+        service = EngagementService()
+        try:
+            return {
+                "like_url": service.link(recipient.email, campaign_id, EmailAction.LIKED),
+                "unsubscribe_url": service.link(
+                    recipient.email, campaign_id, EmailAction.UNSUBSCRIBED
+                ),
+            }
+        except Exception:  # noqa: BLE001 - degrade rather than block the send
+            log.warning("engagement.link_failed", campaign_id=campaign_id, exc_info=True)
+            return untracked
+
+    @staticmethod
+    def _assert_no_unresolved_links(html: str, text: str, email: str) -> None:
+        """Refuse to send an email still containing a link placeholder.
+
+        The compliance check at render time accepts the unsubscribe *token* in
+        place of a URL, which is only safe because of this. Here is the last
+        point before the provider, and a literal "{{unsubscribe_url}}" in a
+        customer's inbox is both embarrassing and a compliance failure — so it
+        fails loudly instead.
+        """
+        stranded = [
+            token
+            for token in LINK_TOKENS
+            if f"{{{{{token}}}}}" in html or f"{{{{{token}}}}}" in text
+        ]
+        if stranded:
+            raise EmailError(
+                f"unresolved link tokens in the message: {', '.join(stranded)}",
+                user_message=(
+                    "This email could not be personalised correctly and was not sent. "
+                    "Check the template's footer links."
+                ),
+                context={"tokens": stranded, "recipient": mask_email(email)},
+            )
 
     @staticmethod
     def _persist(campaign_id: int, paired: list[tuple[int, SendResult]]) -> None:

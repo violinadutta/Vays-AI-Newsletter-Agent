@@ -46,7 +46,17 @@ logging.getLogger("CSSUTILS").setLevel(logging.ERROR)
 #: Merge tokens a user may type into the newsletter body. Anything outside this
 #: set is left alone rather than guessed at — a stray ``{{`` in article text must
 #: reach the recipient as-is, not vanish.
-MERGE_TOKENS = ("name", "company", "email")
+MERGE_TOKENS = ("name", "company", "email", "like_url", "unsubscribe_url")
+
+#: The two tokens that must resolve to a real URL before an email is sent. They
+#: are per-*recipient* — each carries a signed identity — so they cannot be
+#: filled in at render time, which happens once for the whole campaign.
+LINK_TOKENS = ("like_url", "unsubscribe_url")
+
+#: What the template writes where the unsubscribe link goes. The compliance
+#: check accepts this in place of a literal URL, because substitution is
+#: guaranteed before send and asserted at the boundary in DeliveryService.
+UNSUBSCRIBE_TOKEN = "{{unsubscribe_url}}"  # noqa: S105 - a template placeholder, not a secret
 
 _MERGE_PATTERN = re.compile(r"\{\{\s*(" + "|".join(MERGE_TOKENS) + r")\s*\}\}")
 
@@ -185,10 +195,18 @@ class TemplateRenderer:
         A template can be edited by anyone; these checks make a mistake in one
         fail loudly here rather than silently in a customer's inbox.
         """
+
+        # Either a literal URL or the per-recipient token counts. The token is
+        # not a weaker guarantee: DeliveryService substitutes it and then refuses
+        # to send anything with an unresolved token left in it, so the only way
+        # to reach an inbox is with a real URL in place.
+        def has_unsubscribe(part: str) -> bool:
+            return brand.unsubscribe_url in part or UNSUBSCRIBE_TOKEN in part
+
         problems: list[str] = []
-        if brand.unsubscribe_url not in html:
+        if not has_unsubscribe(html):
             problems.append("no unsubscribe link in the HTML part")
-        if brand.unsubscribe_url not in text:
+        if not has_unsubscribe(text):
             problems.append("no unsubscribe link in the plain-text part")
         if brand.address not in html:
             problems.append("no postal address in the HTML part")
@@ -244,7 +262,10 @@ def build_plain_text(
     ]
     if brand.website:
         lines.append(brand.website)
-    lines += ["", f"Unsubscribe: {brand.unsubscribe_url}"]
+    # Not Jinja here -- this builder is plain string work, so the tokens are
+    # written directly. In the HTML templates the same two need {% raw %} or
+    # Jinja consumes them before the per-recipient pass ever sees them.
+    lines += ["", "Was this useful? {{like_url}}", f"Unsubscribe: {UNSUBSCRIBE_TOKEN}"]
 
     return "\n".join(lines)
 
@@ -318,7 +339,9 @@ def strip_markdown(value: str) -> str:
     return _MD_BULLET.sub(r"- \1", value)
 
 
-def apply_merge_tokens(value: str, recipient: Recipient | None) -> str:
+def apply_merge_tokens(
+    value: str, recipient: Recipient | None, links: dict[str, str] | None = None
+) -> str:
     """Substitute ``{{name}}``-style tokens by literal replacement.
 
     Deliberately not Jinja. This runs over content a user typed and an LLM wrote;
@@ -328,9 +351,23 @@ def apply_merge_tokens(value: str, recipient: Recipient | None) -> str:
     With no recipient (the preview path) tokens resolve to neutral placeholders
     rather than empty strings, so the user can see where personalisation lands.
     """
+    links = links or {}
     values = {
         "name": (recipient.name if recipient and recipient.name else "there"),
         "company": (recipient.company if recipient and recipient.company else "your team"),
         "email": (recipient.email if recipient else "you@example.com"),
     }
-    return _MERGE_PATTERN.sub(lambda match: values[match.group(1)], value)
+
+    def substitute(match: re.Match[str]) -> str:
+        token = match.group(1)
+        if token in LINK_TOKENS:
+            # Left untouched unless the caller supplies a real URL. This runs
+            # twice: once at render time for the whole campaign, and again per
+            # recipient at send time. The links are per-recipient, so replacing
+            # them in the first pass — even with a placeholder — would consume
+            # them before the pass that can actually fill them, and every
+            # recipient would get the same dead href.
+            return links.get(token, match.group(0))
+        return values[token]
+
+    return _MERGE_PATTERN.sub(substitute, value)

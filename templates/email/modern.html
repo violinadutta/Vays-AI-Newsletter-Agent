@@ -125,7 +125,17 @@
               {{ brand.name }}{% if brand.website %} &middot; <a href="{{ brand.website }}">{{ brand.website }}</a>{% endif %}<br />
               {{ brand.address }}<br /><br />
               You are receiving this because you subscribed to updates from {{ brand.name }}.<br />
-              <a href="{{ brand.unsubscribe_url }}">Unsubscribe</a>
+              <!-- Both links are per-recipient and substituted at send time. A table,
+                   not flex or inline-block, because Outlook renders neither. -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0"
+                     style="margin:0 auto 10px;"><tr>
+                <td style="padding:0 10px 0 0;">
+                  <a href="{% raw %}{{like_url}}{% endraw %}" style="text-decoration:none;">&#128077; Useful</a>
+                </td>
+                <td style="padding:0 0 0 10px; border-left:1px solid #d0d7dd;">
+                  <a href="{% raw %}{{unsubscribe_url}}{% endraw %}">Unsubscribe</a>
+                </td>
+              </tr></table>
             </td>
           </tr>
 

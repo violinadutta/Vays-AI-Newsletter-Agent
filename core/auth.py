@@ -159,3 +159,74 @@ def verify_session_token(
         return None
 
     return data
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Recipient action tokens (like / unsubscribe links in an email)
+# ─────────────────────────────────────────────────────────────────────────────
+#: Recipient links must keep working long after the send. An unsubscribe link
+#: that expires is a compliance problem — someone reading a six-month-old
+#: newsletter still has the right to opt out — so these live far longer than a
+#: session token. They are single-purpose and grant no access to the app.
+RECIPIENT_TOKEN_TTL_SECONDS = 2 * 365 * 24 * 60 * 60
+
+
+def sign_recipient_token(
+    email: str, campaign_id: int, action: str, secret: str, *, now: float | None = None
+) -> str:
+    """Create a signed link token identifying one recipient, campaign and action.
+
+    Stateless on purpose. A stored token would mean one database row per
+    recipient per action per campaign — 600 rows for a 300-address send that may
+    never be clicked — and a row that has to exist before the email goes out.
+    Signing carries the identity in the URL instead, and the signature is what
+    makes it unforgeable: a recipient can read their own address in the link but
+    cannot change it to somebody else's and unsubscribe them.
+
+    The action is inside the signed payload, so a "like" link cannot be edited
+    into an "unsubscribe" one.
+    """
+    issued = now if now is not None else time.time()
+    payload = json.dumps(
+        {
+            "e": email.strip().lower(),
+            "c": int(campaign_id),
+            "a": action,
+            "iat": int(issued),
+            "exp": int(issued + RECIPIENT_TOKEN_TTL_SECONDS),
+        },
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    encoded = base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+    return f"{encoded}.{_sign(payload, secret)}"
+
+
+def verify_recipient_token(
+    token: str, secret: str, *, expected_action: str | None = None, now: float | None = None
+) -> dict[str, str | int] | None:
+    """Validate a recipient link token, or ``None`` if it is not usable.
+
+    ``expected_action`` binds the token to the page handling it, so a link minted
+    for one action cannot be replayed against another route.
+    """
+    try:
+        encoded, signature = token.split(".", 1)
+        padding = "=" * (-len(encoded) % 4)
+        payload = base64.urlsafe_b64decode(encoded + padding)
+    except (ValueError, TypeError):
+        return None
+
+    if not hmac.compare_digest(signature, _sign(payload, secret)):
+        return None
+
+    try:
+        data = json.loads(payload)
+    except json.JSONDecodeError:
+        return None
+
+    if not isinstance(data, dict) or data.get("exp", 0) < (now if now is not None else time.time()):
+        return None
+    if expected_action is not None and data.get("a") != expected_action:
+        return None
+    return data

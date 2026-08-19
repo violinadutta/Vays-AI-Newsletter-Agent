@@ -216,6 +216,25 @@ def main() -> None:
     # Before the auth gate, so the login screen carries the brand too.
     render_logo()
 
+    # ── the one public route ────────────────────────────────────────────────
+    # Recipients are customers. They have no account and never will, so the Like
+    # and Unsubscribe links in a newsletter cannot be served from behind the
+    # login. This is the only hole in the auth gate and it is kept deliberately
+    # narrow:
+    #
+    #   * it opens only when a `t` parameter is present, and the page refuses
+    #     anything whose HMAC signature does not verify against APP_SECRET_KEY;
+    #   * the token names one address, one campaign and one action, so it grants
+    #     nothing beyond itself — there is no session, no navigation and no
+    #     access to any other page;
+    #   * it returns immediately, so no admin page can render on this path even
+    #     if a later edit adds one.
+    from ui.pages import engage
+
+    if engage.is_recipient_link():
+        engage.render()
+        return
+
     # A browser refresh starts a new Streamlit session, so `session_state` is
     # empty even though the person never signed out. Rebuild from the cookie
     # before concluding they are anonymous.

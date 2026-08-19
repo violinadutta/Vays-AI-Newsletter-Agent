@@ -281,6 +281,18 @@ class SendStatus(StrEnum):
     SUPPRESSED = "SUPPRESSED"
 
 
+class EmailAction(StrEnum):
+    """Something a *recipient* did with a delivered email.
+
+    Distinct from :class:`SendStatus`, which is what the platform did to the
+    message. A send can be SENT and still be unsubscribed from, and both facts
+    matter — one is delivery, the other is engagement.
+    """
+
+    LIKED = "LIKED"
+    UNSUBSCRIBED = "UNSUBSCRIBED"
+
+
 class SuppressionReason(StrEnum):
     UNSUBSCRIBED = "UNSUBSCRIBED"
     HARD_BOUNCE = "HARD_BOUNCE"

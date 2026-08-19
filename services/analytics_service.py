@@ -10,12 +10,13 @@ the fallback rules below are testable without a browser.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 
 from config import get_logger
-from core.enums import SendStatus
+from core.enums import EmailAction, SendStatus
 from modules.repository.database import unit_of_work
+from modules.repository.event_repo import EmailEventRepository
 from modules.repository.send_repo import SendRepository
 
 log = get_logger(__name__)
@@ -39,6 +40,8 @@ class DeliveryRecord:
     campaign_id: int
     is_estimated_time: bool
     error: str | None = None
+    liked: bool = False
+    unsubscribed: bool = False
 
     @property
     def delivered(self) -> bool:
@@ -53,6 +56,23 @@ class DeliverySummary:
     delivered: int = 0
     failed: int = 0
     pending: int = 0
+    liked: int = 0
+    unsubscribed: int = 0
+
+    @property
+    def like_rate(self) -> float:
+        """Likes as a percentage of *delivered* emails.
+
+        Delivered, not sent: an email that bounced was never an opportunity to
+        be liked, so counting it would understate engagement for reasons that
+        have nothing to do with the writing.
+        """
+        return (self.liked / self.delivered * 100) if self.delivered else 0.0
+
+    @property
+    def unsubscribe_rate(self) -> float:
+        """Opt-outs as a percentage of delivered emails."""
+        return (self.unsubscribed / self.delivered * 100) if self.delivered else 0.0
 
     @property
     def delivery_rate(self) -> float:
@@ -99,7 +119,24 @@ class AnalyticsService:
                 limit=limit,
                 offset=offset,
             )
-            return [self._to_record(*row) for row in rows]
+            records = [self._to_record(*row) for row in rows]
+
+            # One lookup for the whole page rather than a query per row. Done
+            # inside the same unit of work so the two reads see one snapshot.
+            events = EmailEventRepository(session).actions_for(
+                sorted({record.campaign_id for record in records})
+            )
+
+        return [
+            replace(
+                record,
+                liked=str(EmailAction.LIKED)
+                in events.get((record.email.lower(), record.campaign_id), ()),
+                unsubscribed=str(EmailAction.UNSUBSCRIBED)
+                in events.get((record.email.lower(), record.campaign_id), ()),
+            )
+            for record in records
+        ]
 
     def count(
         self,
@@ -120,8 +157,13 @@ class AnalyticsService:
 
     def summary(self, *, days: int | None = None) -> DeliverySummary:
         """Totals per status over the window."""
+        since = self._since(days)
         with unit_of_work() as session:
-            totals = SendRepository(session).status_totals(since=self._since(days))
+            totals = SendRepository(session).status_totals(since=since)
+            # Engagement is not filtered by `since`: a like on a newsletter sent
+            # last month still belongs to that campaign, and clipping by the
+            # click date would make the tiles disagree with the table.
+            events = EmailEventRepository(session).totals()
 
         delivered = sum(totals.get(str(s), 0) for s in DELIVERED_STATUSES)
         failed = sum(totals.get(str(s), 0) for s in FAILED_STATUSES)
@@ -130,6 +172,8 @@ class AnalyticsService:
             delivered=delivered,
             failed=failed,
             pending=sum(totals.values()) - delivered - failed,
+            liked=events.get(str(EmailAction.LIKED), 0),
+            unsubscribed=events.get(str(EmailAction.UNSUBSCRIBED), 0),
         )
 
     def campaigns(self) -> list[tuple[int, str]]:

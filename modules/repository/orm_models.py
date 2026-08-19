@@ -39,6 +39,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from core.enums import (
     ArticleStatus,
     CampaignStatus,
+    EmailAction,
     ExtractorTier,
     PostState,
     SendStatus,
@@ -457,4 +458,50 @@ class SubscriberORM(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow
+    )
+
+
+class EmailEventORM(Base):
+    """Something a recipient did with a delivered email: liked it, or opted out.
+
+    **Separate from ``send_records`` on purpose.** That table is what the
+    platform did *to* the message and has exactly one row per attempt. This is
+    what the human did *with* it, is written much later (or never), and is
+    driven by a click from outside the application. Folding the two together
+    would mean updating a delivery record months after the send and losing the
+    distinction between "we sent it" and "they engaged with it".
+
+    ``email`` rather than ``recipient_id``: the click arrives from a signed link
+    carrying an address, and the person may have been removed from the master
+    list in the meantime. Storing the address keeps the event true regardless,
+    and it is what the analytics page joins on.
+    """
+
+    __tablename__ = "email_events"
+    __table_args__ = (
+        # One event per person per campaign per action. Someone who clicks Like
+        # twice — or whose mail client opens the link again — has still liked it
+        # once, and a double row would overstate engagement. The repository
+        # relies on this rather than checking first, so a concurrent double
+        # click cannot slip between a read and a write.
+        UniqueConstraint("email", "campaign_id", "action", name="uq_email_event"),
+        Index("ix_email_events_campaign_action", "campaign_id", "action"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    #: Lower-cased at write time so a click from "Dana@x.com" matches the row
+    #: stored for "dana@x.com".
+    email: Mapped[str] = mapped_column(String(254), nullable=False, index=True)
+
+    campaign_id: Mapped[int] = mapped_column(
+        ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    action: Mapped[EmailAction] = mapped_column(String(24), nullable=False)
+
+    #: Kept for support questions ("I never clicked that"), not for analytics.
+    user_agent: Mapped[str | None] = mapped_column(String(255))
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow, index=True
     )
